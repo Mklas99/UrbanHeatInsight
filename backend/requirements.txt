@@ -1,0 +1,4 @@
+fastapi
+uvicorn[standard]
+mlflow
+python-json-logger
