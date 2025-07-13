@@ -1,4 +1,6 @@
 
+scripts/firstTest.geojson
+
 # Python
 __pycache__/
 *.py[cod]

@@ -60,6 +60,19 @@ function MapView({ heatRadius }) {
             weight: 0,
             interactive: false
           }).addTo(mapRef.current);
+
+          // Add #file:firstTest.geojson to the map
+          fetch('/firstTest.geojson')
+            .then(res => res.json())
+            .then(testGeoJson => {
+              L.geoJSON(testGeoJson, {
+                style: {
+                  color: '#ff6600',
+                  weight: 2,
+                  fillOpacity: 0.3
+                }
+              }).addTo(mapRef.current);
+            });
         });
     }
   }, []);

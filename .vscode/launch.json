@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "Run FastAPI Backend",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
       "args": [
@@ -24,11 +24,10 @@
       "request": "launch",
       "command": "npm start",
       "cwd": "${workspaceFolder}/frontend",
-      "console": "integratedTerminal"
     },
     {
       "name": "Run MLflow UI",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "program": "/usr/local/bin/mlflow",
       "args": [
