@@ -1,29 +1,33 @@
-import React, { useEffect, useRef } from "react";
-import L from "leaflet";
-import "leaflet.heat";
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Header from './components/Header';
+import Sidebar from './components/Sidebar';
+import HomePage from './pages/HomePage';
+import AboutPage from './pages/AboutPage';
 
-export default function App() {
-  const mapRef = useRef(null);
+function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [cityCenterMarkerRef, setcityCenterMarkerRef] = useState(true);
+  const [heatRadius, setHeatRadius] = useState(25);
 
-  useEffect(() => {
-    if (!mapRef.current) {
-      mapRef.current = L.map("map").setView([48.2082, 16.3738], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(mapRef.current);
-
-      // Add sample heatmap layer
-      const points = [
-        [48.2082, 16.3738, 0.5],
-        [48.209, 16.37, 0.8],
-        [48.207, 16.375, 0.3],
-        [48.21, 16.38, 0.7],
-      ];
-      const heat = L.heatLayer(points, { radius: 25 }).addTo(mapRef.current);
-    }
-  }, []);
-
-  return <div id="map" style={{ height: "100vh" }}></div>;
+  return (
+    <Router>
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <Routes>
+        <Route path="/" element={
+          <HomePage
+            sidebarOpen={sidebarOpen}
+            cityCenterMarkerRef={cityCenterMarkerRef}
+            setcityCenterMarkerRef={setcityCenterMarkerRef}
+            heatRadius={heatRadius}
+            setHeatRadius={setHeatRadius}
+          />
+        } />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
 }
+
+export default App;

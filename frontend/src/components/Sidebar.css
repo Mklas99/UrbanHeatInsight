@@ -1,0 +1,22 @@
+.sidebar {
+  background-color: #f4f4f4;
+  height: calc(100vh - 60px); /* header height 60px */
+  position: fixed;
+  top: 60px;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  overflow-y: auto;
+  transition: width 0.3s ease;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 999;
+}
+
+.sidebar.closed {
+  width: 0;
+  overflow: hidden;
+}
+
+.sidebar-content {
+  padding: 1rem;
+}

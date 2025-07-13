@@ -1,0 +1,20 @@
+.home-container {
+  display: flex;
+  height: calc(100vh - 60px); /* header height */
+  margin-top: 60px; /* space for header */
+}
+
+.map-container {
+  flex-grow: 1;
+  transition: margin-left 0.3s ease;
+  height: 100%;
+  position: relative;
+}
+
+.map-container.with-sidebar {
+  margin-left: 300px; /* sidebar width */
+}
+
+.map-container.full-width {
+  margin-left: 0;
+}
