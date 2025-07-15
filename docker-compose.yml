@@ -12,8 +12,37 @@ services:
       - "8000:8000"
     environment:
       - LOG_LEVEL=info
+      - DATABASE_URL=postgresql+asyncpg://myapp_user:myapp_pass@db:5432/myapp_db
     depends_on:
       - mlflow
+      - db
+  pgadmin:
+    image: dpage/pgadmin4:7.6
+    container_name: pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: supersecret
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+  db:
+    image: postgis/postgis:15-3.4-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: myapp_user
+      POSTGRES_PASSWORD: myapp_pass
+      POSTGRES_DB: myapp_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
 
   mlflow:
     image: python:3.11-slim

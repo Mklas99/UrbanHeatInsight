@@ -3,3 +3,7 @@ uvicorn[standard]
 mlflow
 python-json-logger
 GDAL
+sqlalchemy[asyncio]
+asyncpg
+geoalchemy2
+pydantic

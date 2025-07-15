@@ -1,4 +1,9 @@
-Certainly! Here is a **professional architecture document** for the UrbanHeatmap portal-style application. It includes structured sections with detailed descriptions and illustrative diagrams: **Component Diagram**, **Workflow Diagram**, and **Context Diagram**.
+TODO:
+what to explain:
+  pgadmin
+  gdal
+  mlflow
+  
 
 ---
 

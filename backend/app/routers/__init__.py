@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter
 from fastapi.params import Depends
-from api import collector_router
+from routers import collector_router
 from . import energy_data_router, rabbitmq_router
 
 # Define a custom JSON schema for PydanticObjectId
