@@ -9,7 +9,7 @@ from ..database.database import Base
 class HeatmapPoint(Base):
     __tablename__ = "heatmap_points"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Integer, primary_key=True)
     latitude = Column(Float, nullable=False, index=True)
     longitude = Column(Float, nullable=False, index=True)
     intensity = Column(Float, nullable=False)
@@ -18,7 +18,7 @@ class HeatmapPoint(Base):
     source = Column(String(100), nullable=True)  # sensor, satellite, manual
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
     geometry = Column(Geometry('POINT', srid=4326), nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON string for additional data
+    meta_data = Column(String)  # JSON string for additional data
     
     def __repr__(self):
         return f"<HeatmapPoint(lat={self.latitude}, lon={self.longitude}, intensity={self.intensity})>"

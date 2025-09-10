@@ -1,5 +1,5 @@
 # Start with the base image
-FROM python:3.11-slim-bullseye
+FROM python:3.11-slim-bookworm
 
 # Set environment variables
 ENV NODE_VERSION=18
@@ -7,10 +7,14 @@ ENV NODE_VERSION=18
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
+    ca-certificates \
     gnupg \
     g++ \
     make \
+    gdal-bin \
     libgdal-dev \
+    python3-dev \
+    build-essential \
     wget \
     && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
     && apt-get install -y nodejs \
@@ -18,17 +22,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Miniconda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
-    bash /tmp/miniconda.sh -b -p /opt/conda && \
-    rm /tmp/miniconda.sh && \
-    /opt/conda/bin/conda init bash
+# Install Python GDAL bindings matching system GDAL version (Bookworm provides 3.6+)
+RUN pip install GDAL==3.6
 
-# Add Conda to PATH
-ENV PATH="/opt/conda/bin:$PATH"
-
-# Install GDAL using Conda
-RUN conda install -c conda-forge gdal -y && conda clean -afy
+# Install pgAdmin4 via pip for standalone use
+RUN pip install pgadmin4
 
 # Set GDAL environment variables
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
@@ -39,3 +37,11 @@ RUN pip install --upgrade pip setuptools
 
 # Set the working directory
 WORKDIR /workspace
+
+# Add pgAdmin repository and install pgAdmin4 (web version)
+RUN curl https://www.pgadmin.org/static/packages_pgadmin_org.pub | gpg --dearmor > /usr/share/keyrings/pgadmin-keyring.gpg \
+    && sh -c 'echo "deb [signed-by=/usr/share/keyrings/pgadmin-keyring.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/bookworm pgadmin4 main" > /etc/apt/sources.list.d/pgadmin4.list' \
+    && apt-get update \
+    && apt-get install -y pgadmin4-web \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*

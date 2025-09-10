@@ -31,16 +31,23 @@ app.include_router(collector_router.router, prefix="/api", tags=["collector"])
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize database tables on startup."""
-    logger.info("Starting UrbanHeatmap API...")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables created successfully")
+    try:
+        logger.info("Starting UrbanHeatmap API...")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables created successfully")
+    except Exception as exc:
+        logger.error(f"Startup error: {exc}")
+        raise
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
     """Cleanup on shutdown."""
-    logger.info("Shutting down UrbanHeatmap API...")
-    await engine.dispose()
+    try:
+        logger.info("Shutting down UrbanHeatmap API...")
+        await engine.dispose()
+    except Exception as exc:
+        logger.error(f"Shutdown error: {exc}")
 
 @app.get("/", response_model=dict)
 async def root() -> dict:
@@ -54,8 +61,10 @@ async def health_check() -> dict:
 
 try:
     app.mount("/static", StaticFiles(directory="../frontend/build"), name="static")
-except RuntimeError:
-    logger.warning("Frontend build directory not found, skipping static file serving")
+except RuntimeError as e:
+    logger.warning(f"Frontend build directory not found, skipping static file serving: {e}")
+except Exception as exc:
+    logger.error(f"Error mounting static files: {exc}")
 
 def error_response(error_type: str, message: str, details: object = None) -> JSONResponse:
     """Format error responses."""

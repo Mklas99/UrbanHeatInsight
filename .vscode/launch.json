@@ -38,6 +38,19 @@
         "5000"
       ],
       "console": "integratedTerminal"
+    },
+    {
+      "name": "Run pgAdmin 4",
+      "type": "python",
+      "request": "launch",
+      "program": "/usr/local/bin/pgadmin4",
+      "args": [
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "5050"
+      ],
+      "console": "integratedTerminal"
     }
   ],
   "compounds": [
@@ -46,7 +59,8 @@
       "configurations": [
         "Run FastAPI Backend",
         "Run Frontend Dev Server",
-        "Run MLflow UI"
+        "Run MLflow UI",
+        "Run pgAdmin 4"
       ]
     }
   ]
