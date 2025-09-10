@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exception_handlers import RequestValidationError
+from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .core.logger_config import logger, LogMiddleware
@@ -33,9 +33,6 @@ async def startup_event() -> None:
     """Initialize database tables on startup."""
     try:
         logger.info("Starting UrbanHeatmap API...")
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables created successfully")
     except Exception as exc:
         logger.error(f"Startup error: {exc}")
         raise
@@ -58,13 +55,6 @@ async def root() -> dict:
 async def health_check() -> dict:
     """Detailed health check."""
     return {"status": "healthy", "service": "UrbanHeatmap API"}
-
-try:
-    app.mount("/static", StaticFiles(directory="../frontend/build"), name="static")
-except RuntimeError as e:
-    logger.warning(f"Frontend build directory not found, skipping static file serving: {e}")
-except Exception as exc:
-    logger.error(f"Error mounting static files: {exc}")
 
 def error_response(error_type: str, message: str, details: object = None) -> JSONResponse:
     """Format error responses."""

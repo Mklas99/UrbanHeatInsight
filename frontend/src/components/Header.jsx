@@ -1,18 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Header.css';
 
 function Header({ sidebarOpen, setSidebarOpen }) {
+  const [translations, setTranslations] = useState({ title: '', welcomeMessage: '' });
+
   useEffect(() => {
     const languageSelector = document.getElementById("language-selector");
-    const root = document.getElementById("root");
 
     const loadLanguage = async (lang) => {
       const response = await fetch(`/assets/locales/${lang}.json`);
       const translations = await response.json();
 
       document.title = translations.title;
-      root.innerHTML = `<h1>${translations.welcomeMessage}</h1>`;
+      setTranslations(translations); // Update state with translations
     };
 
     // Load default language
@@ -22,6 +23,13 @@ function Header({ sidebarOpen, setSidebarOpen }) {
     languageSelector.addEventListener("change", (event) => {
       loadLanguage(event.target.value);
     });
+
+    // Cleanup event listener on unmount
+    return () => {
+      languageSelector.removeEventListener("change", (event) => {
+        loadLanguage(event.target.value);
+      });
+    };
   }, []);
 
   return (
@@ -34,7 +42,7 @@ function Header({ sidebarOpen, setSidebarOpen }) {
         ☰
       </button>
       <img src="/assets/img/g2m.svg" alt="G^2M" className="logo-image" />
-      <h1 className="logo"><Link to="/" aria-label="UrbanHeatInsight Home">UrbanHeatInsight</Link></h1>
+      <h1 className="logo"><Link to="/" aria-label="UrbanHeatInsight Home">Urban Heat Insight</Link></h1> 
       <nav className="nav-links">
         <Link to="/">Home</Link>
         <Link to="/about">About</Link>

@@ -5,9 +5,18 @@ services:
     build:
       context: ./backend
       dockerfile: ../.devcontainer/Dockerfile
-    command: uvicorn app.main:app --host 0.0.0.0 --port ${BACKEND_PORT} --reload
+    working_dir: /workspace/backend
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port ${BACKEND_PORT}
+      --reload
+      --reload-dir app
+      --reload-exclude /workspace/frontend/*
+      --reload-exclude /workspace/backend/app/__pycache__/*
+      --reload-exclude /workspace/.git/*
     volumes:
-      - .:/workspace:cached
+      - ./backend:/workspace/backend:cached
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     environment:
@@ -47,8 +56,11 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "False"  # Enable pre-configured servers
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+      - ./scripts/pgadmin/generate_servers.sh:/scripts/pgadmin/generate_servers.sh
+    entrypoint: ["/bin/bash", "-c", "bash /scripts/pgadmin/generate_servers.sh && /entrypoint.sh"]
 
   db:
     image: postgis/postgis:15-3.4-alpine
@@ -61,6 +73,7 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+      - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   mlflow:
     image: python:3.11-slim

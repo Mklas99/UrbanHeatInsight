@@ -19,6 +19,13 @@
       "justMyCode": true
     },
     {
+      "name": "Watch Frontend Dev Server",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run watch",
+      "cwd": "${workspaceFolder}/frontend",
+    },
+    {
       "name": "Run Frontend Dev Server",
       "type": "node-terminal",
       "request": "launch",

@@ -27,6 +27,12 @@
   font-size: 1.25rem;
 }
 
+.logo-image {
+  height:3em;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
+
 .nav-links {
   margin-left: auto;
   margin-right: 5rem;
@@ -62,4 +68,5 @@
 .language-select-option {
   background-color: #457d58;
   color: #cde5d4;
+  font-size: 1rem;
 }

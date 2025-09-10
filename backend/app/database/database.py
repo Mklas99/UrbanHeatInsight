@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import OperationalError, DBAPIError
 
+from backend.app.core.config import settings
+
 # Load sensitive data from environment variables
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = settings.db_url  # <-- use the instance property
 
 def validate_database_url(url: str):
     # Basic validation for asyncpg PostgreSQL URL

@@ -7,3 +7,4 @@ asyncpg
 geoalchemy2
 pydantic
 python-multipart
+pydantic-settings
