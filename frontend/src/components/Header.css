@@ -20,11 +20,12 @@
   margin-right: 1rem;
 }
 
-.logo a {
+.title {
   color: #cde5d4;
   text-decoration: none;
   font-weight: bold;
   font-size: 1.25rem;
+  vertical-align: middle;
 }
 
 .logo-image {

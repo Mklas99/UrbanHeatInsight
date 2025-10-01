@@ -42,7 +42,7 @@ function Header({ sidebarOpen, setSidebarOpen }) {
         ☰
       </button>
       <img src="/assets/img/g2m.svg" alt="G^2M" className="logo-image" />
-      <h1 className="logo"><Link to="/" aria-label="UrbanHeatInsight Home">Urban Heat Insight</Link></h1> 
+      <h1 className="title"><Link to="/" aria-label="UrbanHeatInsight Home">Urban Heat Insight</Link></h1> 
       <nav className="nav-links">
         <Link to="/">Home</Link>
         <Link to="/about">About</Link>

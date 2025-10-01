@@ -9,7 +9,9 @@ function Sidebar({ sidebarOpen, cityCenterMarkerRef, setcityCenterMarkerRef, hea
     <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} aria-label="Sidebar controls">
       <div className="sidebar-content">
         <LayerTogglePanel cityCenterMarkerRef={cityCenterMarkerRef} setcityCenterMarkerRef={setcityCenterMarkerRef} />
+        <hr />
         <SettingsPanel heatRadius={heatRadius} setHeatRadius={setHeatRadius} />
+        <hr />
         <InfoPanel />
       </div>
     </aside>
