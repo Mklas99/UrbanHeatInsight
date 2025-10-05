@@ -1,0 +1,14 @@
+{
+  "appTitle": "Urban Heat Insight",
+  "nav.home": "Home",
+  "nav.about": "About",
+  "header.toggleSidebar": "Toggle sidebar",
+  "header.theme": "Theme",
+  "header.language": "Language",
+  "panel.layers": "Map Layers",
+  "panel.settings": "Settings",
+  "panel.about": "About this Map",
+  "panel.showHeatmap": "Show Heatmap",
+  "panel.heatRadius": "Heatmap Radius",
+  "about.text": "This heatmap shows urban heat intensity in Vienna based on sample data. Use the controls above to toggle layers and adjust settings."
+}

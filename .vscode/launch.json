@@ -22,15 +22,8 @@
       "name": "Watch Frontend Dev Server",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run watch",
-      "cwd": "${workspaceFolder}/frontend",
-    },
-    {
-      "name": "Run Frontend Dev Server",
-      "type": "node-terminal",
-      "request": "launch",
-      "command": "npm start",
-      "cwd": "${workspaceFolder}/frontend",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/frontend"
     },
     {
       "name": "Run MLflow UI",

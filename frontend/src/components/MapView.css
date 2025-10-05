@@ -1,4 +1,103 @@
+/* src/components/MapView.css */
+
+/* --- Size & layout ------------------------------------------------------ */
 .map-view {
-  height: 100%;
+  /* Give the map a predictable size; override via the 'style' prop if needed */
   width: 100%;
+  position: relative;
+  background: #f3f4f6; /* subtle bg while tiles load */
+  outline: none;
 }
+
+/* Optional: if the container is inside flex layouts, make it grow nicely */
+.map-view.is-flex {
+  flex: 1 1 auto;
+  min-height: 320px;
+}
+
+/* --- Critical fix for broken tiles (global resets often do img { max-width }) */
+.leaflet-container img,
+.leaflet-pane img {
+  max-width: none !important;
+}
+
+/* Make sure the Leaflet container fills the wrapper (defensive) */
+.map-view .leaflet-container,
+.map-view.leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Controls & UI polish ---------------------------------------------- */
+.leaflet-control {
+  /* slightly stronger contrast on light backgrounds */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Buttons inside controls */
+.leaflet-control-zoom a,
+.leaflet-bar a {
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+}
+
+/* Scale control readability */
+.leaflet-control-scale-line {
+  font-size: 12px;
+}
+
+/* Tooltips & popups readability */
+.leaflet-tooltip,
+.leaflet-popup-content {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+/* --- Pointer & selection behavior -------------------------------------- */
+.map-view,
+.map-view * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.map-view .leaflet-grab {
+  cursor: grab;
+}
+.map-view .leaflet-dragging .leaflet-grab,
+.map-view .leaflet-dragging .leaflet-grab * {
+  cursor: grabbing;
+}
+
+.map-view ::selection {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* --- Dark theme (optional) --------------------------------------------- */
+/* If you toggle a dark theme on <html data-theme="dark"> or body.dark, 
+   these help the controls blend in better. */
+:root[data-theme="dark"] .map-view {
+  background: #0f172a; /* slate-900-ish while tiles load */
+}
+
+:root[data-theme="dark"] .leaflet-control {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Print friendliness ------------------------------------------------- */
+@media print {
+  .map-view {
+    height: 180mm; /* A4 portrait-friendly height */
+  }
+  .leaflet-control {
+    display: none !important; /* hide zoom/scale in print */
+  }
+}
+
+/* --- If you render map under a fixed header, prevent overlap ------------ */
+/* Example:
+header.app-header { position: fixed; top: 0; height: 64px; width: 100%; }
+main { padding-top: 64px; }
+.map-view { height: calc(100vh - 64px); }
+*/

@@ -1,11 +1,10 @@
 .sidebar {
-  background-color: #f4f4f4;
-  height: calc(100vh - 60px); /* header height 60px */
+  height: calc(100vh - 64px); /* header height 64px */
   position: fixed;
-  top: 60px;
+  top: 64px;
   left: 0;
   bottom: 0;
-  width: 300px;
+  width: auto;
   overflow-y: auto;
   transition: width 0.3s ease;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
@@ -15,6 +14,7 @@
 .sidebar.closed {
   width: 0;
   overflow: hidden;
+  display: none;
 }
 
 .sidebar-content {
