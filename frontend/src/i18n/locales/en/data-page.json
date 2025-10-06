@@ -1,0 +1,14 @@
+{
+    "title": "Data Management",
+    "uploadButton": "Upload Dataset",
+    "supportedFormats": "Supported formats: {{formats}}",
+    "uploading": "Uploading... {{progress}}%",
+    "datasetTitle": "Dataset: {{fileName}}",
+    "processing": "Processing...",
+    "processed": "Processed",
+    "processData": "Process Data",
+    "emptyState": {
+        "title": "No Data Uploaded",
+        "description": "Upload a dataset to start analyzing your urban heat data"
+    }
+}

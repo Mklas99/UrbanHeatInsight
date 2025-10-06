@@ -10,5 +10,7 @@
   "panel.about": "About this Map",
   "panel.showHeatmap": "Show Heatmap",
   "panel.heatRadius": "Heatmap Radius",
-  "about.text": "This heatmap shows urban heat intensity in Vienna based on sample data. Use the controls above to toggle layers and adjust settings."
+  "about.text": "This heatmap shows urban heat intensity in Vienna based on sample data. Use the controls above to toggle layers and adjust settings.",
+  "header.about": "About Urban Heat Insight",
+  "header.data": "Data Management"
 }

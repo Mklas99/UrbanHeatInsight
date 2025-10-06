@@ -10,5 +10,7 @@
   "panel.about": "\u00dcber diese Karte",
   "panel.showHeatmap": "Heatmap anzeigen",
   "panel.heatRadius": "Heatmap Radius",
-  "about.text": "Diese Heatmap zeigt die urbane Hitzeintensit\u00e4t in Wien anhand von Beispieldaten. Nutze die Regler oben, um Ebenen umzuschalten und Einstellungen anzupassen."
+  "about.text": "Diese Heatmap zeigt die urbane Hitzeintensit\u00e4t in Wien anhand von Beispieldaten. Nutze die Regler oben, um Ebenen umzuschalten und Einstellungen anzupassen.",
+  "header.about": "Über Urban Heat Insight",
+  "header.data": "Datenmanagement"
 }

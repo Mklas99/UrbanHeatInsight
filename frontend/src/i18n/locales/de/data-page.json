@@ -1,0 +1,14 @@
+{
+    "title": "Datenverwaltung",
+    "uploadButton": "Datensatz hochladen",
+    "supportedFormats": "Unterstützte Formate: {{formats}}",
+    "uploading": "Hochladen... {{progress}}%",
+    "datasetTitle": "Datensatz: {{fileName}}",
+    "processing": "Verarbeitung...",
+    "processed": "Verarbeitet",
+    "processData": "Daten verarbeiten",
+    "emptyState": {
+        "title": "Keine Daten hochgeladen",
+        "description": "Laden Sie einen Datensatz hoch, um mit der Analyse Ihrer städtischen Hitzedaten zu beginnen"
+    }
+}

@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar/Sidebar';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import logger from './utils/logger';
+import DataPage from './pages/DataPage';
 
 const log = logger('App.jsx');
 log.info('App module loaded');
@@ -24,6 +25,7 @@ export default function App() {
         <Sidebar />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/data" element={<DataPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

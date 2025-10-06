@@ -37,7 +37,17 @@ export default function Header(props: HeaderProps){
           </IconButton>
         </Tooltip>
         <Typography variant="h6" sx={{ ml: 1, fontWeight: 700 }}>{t('appTitle')}</Typography>
-        <Box sx={{ flexGrow: 1 }} />
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', gap: 2 }}>
+          <Typography variant="body1">
+            <a href="/" style={{ textDecoration: 'none', color: 'inherit' }}>{t('appTitle')}</a>
+          </Typography>
+          <Typography variant="body1">
+            <a href="/data" style={{ textDecoration: 'none', color: 'inherit' }}>{t('header.data')}</a>
+          </Typography>
+          <Typography variant="body1">
+            <a href="/about" style={{ textDecoration: 'none', color: 'inherit' }}>{t('header.about')}</a>
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <LanguageIcon aria-hidden />
           <Select size="small" value={language} onChange={(e) => setLanguage(e.target.value)} aria-label={t('header.language')}>

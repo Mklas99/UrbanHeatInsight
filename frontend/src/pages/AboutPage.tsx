@@ -3,7 +3,7 @@ import logger from '../utils/logger';
 import './AboutPage.css';
 import PageLayout from '../layouts/PageLayout';
 
-const log = logger('pages/AboutPage.jsx');
+const log = logger('pages/AboutPage.tsx');
 log.info('AboutPage module loaded');
 
 export default function AboutPage(props: any) {
