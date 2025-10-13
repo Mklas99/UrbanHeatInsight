@@ -25,6 +25,7 @@ yarn-error.log*
 # VSCode
 #.vscode/
 .history/
+.idea/
 
 # Docker
 mlflow_data/
