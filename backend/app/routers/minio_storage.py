@@ -1,14 +1,19 @@
-from fastapi import APIRouter, UploadFile, HTTPException, status
-from app.services.minio_client import get_minio_client
+import io
+import socket
+from datetime import timedelta
+
+import anyio
+from fastapi import APIRouter, HTTPException, UploadFile, status
+from minio.error import S3Error
+
 from app.core.config import settings
 from app.core.logger_config import logger
-from minio.error import S3Error
-from datetime import timedelta
-import anyio, io, socket
+from app.services.minio_client import get_minio_client
 
 router = APIRouter(prefix="/storage", tags=["storage"])
 
 # ping / list / upload / presigned-url / delete
+
 
 # Check Minio connection and bucket existence (used for debugging TODO: remove in production ?)
 @router.get("/ping")
@@ -31,7 +36,7 @@ def minio_ping():
             "endpoint": ep,
             "buckets": buckets,
         }
-    except socket.error as e:
+    except OSError as e:
         logger.error(f"minio socket error: {e}")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -72,13 +77,12 @@ async def upload_file(file: UploadFile):
                 length=len(data),
                 content_type=content_type,
             )
+
         # TODO: Check if working with Multifile
-        #use background thread cause synchron stream while asynchron architecture
+        # use background thread cause synchron stream while asynchron architecture
         res = await anyio.to_thread.run_sync(_put)
         # verify upload with previous mechanic
-        stat = await anyio.to_thread.run_sync(
-            lambda: client.stat_object(bucket, object_name)
-        )
+        stat = await anyio.to_thread.run_sync(lambda: client.stat_object(bucket, object_name))
 
         logger.info(f"Upload verficated: {bucket}/{object_name} size={stat.size}")
         return {
@@ -140,7 +144,6 @@ def list_objects(prefix: str = ""):
     objs = client.list_objects(bucket, prefix=prefix, recursive=True)
     return {"bucket": bucket, "objects": [o.object_name for o in objs]}
 
-from fastapi import status
 
 @router.delete("/delete/{object_name:path}")
 def delete_object(object_name: str):

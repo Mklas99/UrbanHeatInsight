@@ -76,8 +76,5 @@ python ml/log_dummy.py
 
 - The backend serves static frontend files from `frontend/build` (run `npm run build` to create).
 - Logging is configured for JSON structured logs.
-- MLflow tracking server uses SQLite backend by default for simplicity.
 
 ---
-
-Happy coding!

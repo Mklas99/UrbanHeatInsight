@@ -1,8 +1,9 @@
+import urllib3
 from minio import Minio
 from minio.error import S3Error
+
 from app.core.config import settings
 from app.core.logger_config import logger
-import urllib3
 
 
 def get_minio_client() -> Minio:

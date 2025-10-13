@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "urban-heat-insight-api-client"
+version = "1.0.0"
+description = "A client library for accessing Urban Heat Insight – Data & Analytics API"
+authors = ["Klas", "Kraljic", "Mindlberger"]
+readme = "README.md"
+packages = [
+    { include = "urban_heat_insight_data_analytics_api_client" },
+]
+include = ["CHANGELOG.md", "urban_heat_insight_data_analytics_api_client/py.typed"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+httpx = ">=0.23.0,<0.29.0"
+attrs = ">=22.2.0"
+python-dateutil = "^2.8.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+preview = true
+line-length = 120
+ignore = [
+    "F403",  # 'from module import *' used; unable to detect undefined names
+    "F405",  # name may be undefined, or defined from star imports: module
+]
+
+[tool.ruff.lint]
+select = ["F", "I", "UP"]

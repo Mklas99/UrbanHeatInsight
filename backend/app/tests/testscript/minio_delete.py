@@ -1,5 +1,7 @@
-import requests
 import sys
+
+import requests
+
 
 def test_minio_delete(base_url: str, object_name: str) -> None:
     try:
@@ -12,6 +14,7 @@ def test_minio_delete(base_url: str, object_name: str) -> None:
     except Exception as e:
         print(f"Delete failed: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     url = "http://127.0.0.1:8000"

@@ -1,7 +1,9 @@
 import argparse
 import pathlib
-import requests
 import sys
+
+import requests
+
 
 def test_minio_upload(base_url: str, file_path: pathlib.Path) -> None:
     if not file_path.exists():
@@ -21,7 +23,7 @@ def test_minio_upload(base_url: str, file_path: pathlib.Path) -> None:
 
         if resp.status_code == 200:
             data = resp.json()
-            print(f"Upload succeded:")
+            print("Upload succeded:")
             print(f"Bucket: {data.get('bucket')}")
             print(f"Object: {data.get('object')}")
             print(f"Content-Type: {data.get('content_type')}")
@@ -32,6 +34,7 @@ def test_minio_upload(base_url: str, file_path: pathlib.Path) -> None:
     except Exception as e:
         print(f"Upload-test failed: {e}")
         sys.exit(3)
+
 
 if __name__ == "__main__":
     script_dir = pathlib.Path(__file__).resolve().parent

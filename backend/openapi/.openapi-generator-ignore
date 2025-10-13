@@ -1,0 +1,14 @@
+app/api/deps.py
+app/core/**
+app/services/**
+app/repositories/**
+tests/**
+docker-compose.yaml
+Dockerfile
+.flake8
+.gitignore
+.package.json
+.package-lock.json
+.openapi-generator-config.json
+.openapi-generator-ignore
+openapitools.json

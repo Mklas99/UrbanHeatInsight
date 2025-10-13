@@ -1,5 +1,8 @@
+import os
+
 from pydantic import PositiveInt
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     BACKEND_PORT: PositiveInt = 8000
@@ -24,9 +27,11 @@ class Settings(BaseSettings):
     MINIO_PORT: PositiveInt = 9000
     MINIO_CONSOLE_PORT: PositiveInt = 9001
     MINIO_ENDPOINT: str | None = None
-    ENV: str = "dev"   # "docker" oder "dev"
+    ENV: str = "dev"  # "docker" oder "dev"
 
     DATABASE_URL: str | None = None
+    app_env: str = os.getenv("APP_ENV", "development")  # development, staging, production
+
     @property
     def db_url(self) -> str:
         if self.DATABASE_URL:
@@ -40,6 +45,11 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
+    class Config:
+        env_file = "../../.env"
+        case_sensitive = True
+        extra = "ignore"
+
     @property
     def minio_endpoint_effective(self) -> str:
         # ENV überschreibt Default-Host
@@ -48,5 +58,6 @@ class Settings(BaseSettings):
         if self.ENV.lower() == "docker":
             return f"http://minio:{self.MINIO_PORT}"
         return f"http://127.0.0.1:{self.MINIO_PORT}"
+
 
 settings = Settings()

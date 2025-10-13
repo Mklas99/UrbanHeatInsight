@@ -1,7 +1,8 @@
-from osgeo import ogr
 import json
-import tempfile
 import os
+import tempfile
+
+from osgeo import ogr
 
 
 class GPKGtoGeoJSONConverter:
@@ -37,7 +38,7 @@ class GPKGtoGeoJSONConverter:
         geojson_layer = geojson_ds.CopyLayer(layer, layer.GetName())
         geojson_ds = None  # Close to flush to disk
 
-        with open(geojson_path, "r", encoding="utf-8") as f:
+        with open(geojson_path, encoding="utf-8") as f:
             geojson_data = json.load(f)
 
         os.remove(geojson_path)

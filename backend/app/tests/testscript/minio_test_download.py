@@ -1,12 +1,13 @@
 import pathlib
-import requests
 import sys
+
+import requests
+
 
 def test_minio_download(base_url: str, object_name: str, out_path: pathlib.Path | None):
     try:
         # getting presigned url
-        r = requests.get(f"{base_url}/api/storage/presigned/{object_name}",
-                         params={"expires_seconds": 600}, timeout=15)
+        r = requests.get(f"{base_url}/api/storage/presigned/{object_name}", params={"expires_seconds": 600}, timeout=15)
         r.raise_for_status()
         url = r.json()["url"]
 
@@ -34,6 +35,7 @@ def test_minio_download(base_url: str, object_name: str, out_path: pathlib.Path 
     except Exception as e:
         print(f"Download failed: {e}")
         sys.exit(2)
+
 
 if __name__ == "__main__":
     base = "http://127.0.0.1:8000"

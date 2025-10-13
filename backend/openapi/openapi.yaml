@@ -1,0 +1,1491 @@
+openapi: 3.0.0
+info:
+  description: |
+    summary: Backend for uploading datasets, inspecting raw/processed stats, retrieving data layers, and launching clustering/pipeline jobs.  Transparent, traceable endpoints for data ingestion, metadata, analytics jobs and data-layer access. Designed for MLOps-friendly orchestration, CRISP-DM-aligned lifecycle, and clear auditability. All long-running compute uses the Jobs API.
+  title: Urban Heat Insight – Data & Analytics API
+  version: 1.0.0
+servers:
+- description: Development
+  url: https://localhost:8000
+- description: Staging
+  url: https://staging.api.example.com
+tags:
+- name: System
+- name: Datasets
+- name: Files
+- name: Processed
+- name: Layers
+- name: Jobs
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+          description: OK
+      summary: Liveness / readiness probe
+      tags:
+      - System
+  /version:
+    get:
+      operationId: getVersion
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Version"
+          description: Version info
+      summary: API and build/version info
+      tags:
+      - System
+  /datasets:
+    get:
+      operationId: listDatasets
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: page_size
+        required: false
+        schema:
+          default: 25
+          maximum: 200
+          minimum: 1
+          type: integer
+        style: form
+      - description: Search by name/description/tags
+        explode: true
+        in: query
+        name: q
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDatasets_200_response"
+          description: Paged datasets
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+      summary: List uploaded datasets
+      tags:
+      - Datasets
+    post:
+      description: |
+        Multipart upload of one or more files with optional JSON metadata. Large uploads should use chunked transfer or pre-signed URLs (out of scope for this spec).
+      operationId: createDataset
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/createDataset_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+          description: Dataset created
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestId"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+      # security:
+      # - bearerAuth: []
+      summary: Upload dataset (files + metadata)
+      tags:
+      - Datasets
+  /datasets/{dataset_id}:
+    get:
+      operationId: getDataset
+      parameters:
+      - explode: false
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+          description: Dataset
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: Get dataset details
+      tags:
+      - Datasets
+  /datasets/{dataset_id}/files:
+    get:
+      operationId: listDatasetFiles
+      parameters:
+      - explode: false
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/FileStat"
+                type: array
+          description: Files and lightweight stats
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: List raw files with basic stats
+      tags:
+      - Files
+  /datasets/{dataset_id}/files/{file_id}/stats:
+    get:
+      description: |
+        Returns schema/profile (columns, dtypes, CRS, bbox, temporal coverage, missingness, value distributions, checksums, sample rows).
+      operationId: getFileStats
+      parameters:
+      - explode: false
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: file_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileProfile"
+          description: File stats
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: Detailed raw file stats & description
+      tags:
+      - Files
+  /datasets/{dataset_id}/processed:
+    get:
+      operationId: listProcessed
+      parameters:
+      - explode: false
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ProcessedArtifact"
+                type: array
+          description: Processed outputs
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: List processed artifacts for a dataset
+      tags:
+      - Processed
+  /datasets/{dataset_id}/processed/{artifact_id}/stats:
+    get:
+      operationId: getProcessedStats
+      parameters:
+      - explode: false
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: artifact_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessedProfile"
+          description: Processed stats
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: Stats/description of a processed artifact
+      tags:
+      - Processed
+  /datasets/{dataset_id}/layers:
+    get:
+      operationId: listLayers
+      parameters:
+      - explode: false
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/DataLayer"
+                type: array
+          description: Layers
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: List data layers for a dataset
+      tags:
+      - Layers
+  /datasets/{dataset_id}/layers/{layer_id}:
+    get:
+      operationId: getLayer
+      parameters:
+      - explode: false
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: layer_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataLayer"
+          description: Layer
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: Get layer metadata
+      tags:
+      - Layers
+  /datasets/{dataset_id}/layers/{layer_id}/data:
+    get:
+      operationId: getLayerData
+      parameters:
+      - explode: false
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: layer_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - description: Desired format
+        explode: true
+        in: query
+        name: format
+        required: false
+        schema:
+          default: geojson
+          enum:
+          - geojson
+          - parquet
+          - csv
+          type: string
+        style: form
+      - description: "Optional spatial filter (minx,miny,maxx,maxy; WGS84)"
+        explode: true
+        in: query
+        name: bbox
+        required: false
+        schema:
+          pattern: "^-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?,-?\\d+(\\\
+            .\\d+)?$"
+          type: string
+        style: form
+      - description: Optional temporal filter (ISO8601/ISO8601)
+        explode: true
+        in: query
+        name: time_range
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/geo+json:
+              schema:
+                type: object
+            text/csv:
+              schema:
+                type: string
+            application/octet-stream:
+              schema:
+                format: binary
+                type: string
+          description: Layer data
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: Retrieve layer data
+      tags:
+      - Layers
+  /jobs/clustering:
+    post:
+      operationId: startClustering
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusteringRequest"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+          description: Job accepted
+          headers:
+            Location:
+              description: Job status URL
+              explode: false
+              schema:
+                format: uri
+                type: string
+              style: simple
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      # security:
+      # - bearerAuth: []
+      summary: Start a clustering job on selected data
+      tags:
+      - Jobs
+  /jobs/pipeline:
+    post:
+      operationId: startPipeline
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PipelineRequest"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+          description: Job accepted
+          headers:
+            Location:
+              description: Job status URL
+              explode: false
+              schema:
+                format: uri
+                type: string
+              style: simple
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      # security:
+      # - bearerAuth: []
+      summary: Execute the data pipeline on a dataset
+      tags:
+      - Jobs
+  /jobs/{job_id}:
+    delete:
+      operationId: cancelJob
+      parameters:
+      - explode: false
+        in: path
+        name: job_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "202":
+          description: Cancellation requested
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Cannot cancel (already finished)
+      summary: Cancel a running job
+      tags:
+      - Jobs
+    get:
+      operationId: getJob
+      parameters:
+      - explode: false
+        in: path
+        name: job_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+          description: Job info
+        "404":
+          $ref: "#/components/responses/NotFound"
+      summary: Get job status/result
+      tags:
+      - Jobs
+components:
+  headers:
+    XRequestId:
+      description: Trace/correlation ID for auditability
+      explode: false
+      schema:
+        type: string
+      style: simple
+  parameters:
+    page:
+      explode: true
+      in: query
+      name: page
+      required: false
+      schema:
+        default: 1
+        minimum: 1
+        type: integer
+      style: form
+    pageSize:
+      explode: true
+      in: query
+      name: page_size
+      required: false
+      schema:
+        default: 25
+        maximum: 200
+        minimum: 1
+        type: integer
+      style: form
+    dataset_id:
+      explode: false
+      in: path
+      name: dataset_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+    file_id:
+      explode: false
+      in: path
+      name: file_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+    artifact_id:
+      explode: false
+      in: path
+      name: artifact_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+    layer_id:
+      explode: false
+      in: path
+      name: layer_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+    job_id:
+      explode: false
+      in: path
+      name: job_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Bad request
+    NotFound:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Resource not found
+  schemas:
+    Health:
+      example:
+        status: ok
+        dependencies:
+          key: dependencies
+      properties:
+        status:
+          enum:
+          - ok
+          title: status
+          type: string
+        dependencies:
+          additionalProperties:
+            type: string
+          title: dependencies
+          type: object
+      title: Health
+      type: object
+    Version:
+      example:
+        model_version: model_version
+        build_sha: build_sha
+        time: 2000-01-23T04:56:07.000+00:00
+        api_version: api_version
+      properties:
+        api_version:
+          title: api_version
+          type: string
+        build_sha:
+          title: build_sha
+          type: string
+        model_version:
+          nullable: true
+          title: model_version
+          type: string
+        time:
+          format: date-time
+          title: time
+          type: string
+      title: Version
+      type: object
+    Dataset:
+      example:
+        file_count: 0
+        metadata:
+          key: ""
+        size_bytes: 0
+        temporal_coverage:
+          start: 2000-01-23T04:56:07.000+00:00
+          end: 2000-01-23T04:56:07.000+00:00
+        name: name
+        description: description
+        created_at: 2000-01-23T04:56:07.000+00:00
+        spatial_bbox:
+        - 1.4658129805029452
+        - 1.4658129805029452
+        - 1.4658129805029452
+        - 1.4658129805029452
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        created_by: created_by
+        tags:
+        - tags
+        - tags
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        name:
+          title: name
+          type: string
+        description:
+          title: description
+          type: string
+        tags:
+          items:
+            type: string
+          title: tags
+          type: array
+        metadata:
+          additionalProperties: true
+          title: metadata
+          type: object
+        created_at:
+          format: date-time
+          title: created_at
+          type: string
+        created_by:
+          title: created_by
+          type: string
+        file_count:
+          minimum: 0
+          title: file_count
+          type: integer
+        size_bytes:
+          minimum: 0
+          title: size_bytes
+          type: integer
+        spatial_bbox:
+          description: "[minX, minY, maxX, maxY] in WGS84"
+          items:
+            type: number
+          maxItems: 4
+          minItems: 4
+          title: spatial_bbox
+          type: array
+        temporal_coverage:
+          $ref: "#/components/schemas/TimeRange"
+      title: Dataset
+      type: object
+    FileStat:
+      example:
+        filename: filename
+        size_bytes: 0
+        temporal_coverage:
+          start: 2000-01-23T04:56:07.000+00:00
+          end: 2000-01-23T04:56:07.000+00:00
+        mime_type: mime_type
+        crs: crs
+        kind: table
+        column_count: 0
+        checksum: checksum
+        spatial_bbox:
+        - 5.962133916683182
+        - 5.962133916683182
+        - 5.962133916683182
+        - 5.962133916683182
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        row_count: 0
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        filename:
+          title: filename
+          type: string
+        mime_type:
+          title: mime_type
+          type: string
+        size_bytes:
+          minimum: 0
+          title: size_bytes
+          type: integer
+        checksum:
+          description: SHA-256
+          title: checksum
+          type: string
+        kind:
+          enum:
+          - table
+          - raster
+          - vector
+          - timeseries
+          - other
+          title: kind
+          type: string
+        row_count:
+          minimum: 0
+          nullable: true
+          title: row_count
+          type: integer
+        column_count:
+          minimum: 0
+          nullable: true
+          title: column_count
+          type: integer
+        crs:
+          nullable: true
+          title: crs
+          type: string
+        spatial_bbox:
+          description: "[minX, minY, maxX, maxY] in WGS84"
+          items:
+            type: number
+          maxItems: 4
+          minItems: 4
+          title: spatial_bbox
+          type: array
+        temporal_coverage:
+          $ref: "#/components/schemas/TimeRange"
+      title: FileStat
+      type: object
+    FileProfile:
+      example:
+        file:
+          filename: filename
+          size_bytes: 0
+          temporal_coverage:
+            start: 2000-01-23T04:56:07.000+00:00
+            end: 2000-01-23T04:56:07.000+00:00
+          mime_type: mime_type
+          crs: crs
+          kind: table
+          column_count: 0
+          checksum: checksum
+          spatial_bbox:
+          - 5.962133916683182
+          - 5.962133916683182
+          - 5.962133916683182
+          - 5.962133916683182
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          row_count: 0
+        columns:
+        - nullable: true
+          stats:
+            key: ""
+          name: name
+          dtype: dtype
+        - nullable: true
+          stats:
+            key: ""
+          name: name
+          dtype: dtype
+        samples:
+        - key: ""
+        - key: ""
+        quality:
+          duplicate_rows: 6
+          schema_issues:
+          - schema_issues
+          - schema_issues
+          missingness_pct: 0.8008281904610115
+      properties:
+        file:
+          $ref: "#/components/schemas/FileStat"
+        columns:
+          items:
+            $ref: "#/components/schemas/FileProfile_columns_inner"
+          title: columns
+          type: array
+        samples:
+          items:
+            additionalProperties: true
+            type: object
+          title: samples
+          type: array
+        quality:
+          $ref: "#/components/schemas/FileProfile_quality"
+      title: FileProfile
+      type: object
+    ProcessedArtifact:
+      example:
+        lineage:
+        - lineage
+        - lineage
+        size_bytes: 0
+        temporal_coverage:
+          start: 2000-01-23T04:56:07.000+00:00
+          end: 2000-01-23T04:56:07.000+00:00
+        source_files:
+        - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        name: name
+        created_at: 2000-01-23T04:56:07.000+00:00
+        spatial_bbox:
+        - 6.027456183070403
+        - 6.027456183070403
+        - 6.027456183070403
+        - 6.027456183070403
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        type: cleaned_table
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        name:
+          title: name
+          type: string
+        type:
+          enum:
+          - cleaned_table
+          - feature_table
+          - raster_tile
+          - vector_layer
+          - model_output
+          - report
+          title: type
+          type: string
+        source_files:
+          items:
+            format: uuid
+            type: string
+          title: source_files
+          type: array
+        created_at:
+          format: date-time
+          title: created_at
+          type: string
+        lineage:
+          items:
+            type: string
+          title: lineage
+          type: array
+        size_bytes:
+          minimum: 0
+          title: size_bytes
+          type: integer
+        spatial_bbox:
+          description: "[minX, minY, maxX, maxY] in WGS84"
+          items:
+            type: number
+          maxItems: 4
+          minItems: 4
+          title: spatial_bbox
+          type: array
+        temporal_coverage:
+          $ref: "#/components/schemas/TimeRange"
+      title: ProcessedArtifact
+      type: object
+    ProcessedProfile:
+      example:
+        artifact:
+          lineage:
+          - lineage
+          - lineage
+          size_bytes: 0
+          temporal_coverage:
+            start: 2000-01-23T04:56:07.000+00:00
+            end: 2000-01-23T04:56:07.000+00:00
+          source_files:
+          - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          created_at: 2000-01-23T04:56:07.000+00:00
+          spatial_bbox:
+          - 6.027456183070403
+          - 6.027456183070403
+          - 6.027456183070403
+          - 6.027456183070403
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: cleaned_table
+        schema:
+        - name: name
+          dtype: dtype
+        - name: name
+          dtype: dtype
+        provenance:
+          key: ""
+        metrics:
+          key: ""
+      properties:
+        artifact:
+          $ref: "#/components/schemas/ProcessedArtifact"
+        schema:
+          items:
+            $ref: "#/components/schemas/ProcessedProfile_schema_inner"
+          title: schema
+          type: array
+        metrics:
+          additionalProperties: true
+          title: metrics
+          type: object
+        provenance:
+          additionalProperties: true
+          title: provenance
+          type: object
+      title: ProcessedProfile
+      type: object
+    DataLayer:
+      example:
+        temporal_coverage:
+          start: 2000-01-23T04:56:07.000+00:00
+          end: 2000-01-23T04:56:07.000+00:00
+        crs: crs
+        name: name
+        spatial_bbox:
+        - 0.8008281904610115
+        - 0.8008281904610115
+        - 0.8008281904610115
+        - 0.8008281904610115
+        feature_count: 6
+        attributes:
+        - name: name
+          dtype: dtype
+        - name: name
+          dtype: dtype
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        layer_type: vector
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        name:
+          title: name
+          type: string
+        layer_type:
+          enum:
+          - vector
+          - raster
+          - table
+          title: layer_type
+          type: string
+        crs:
+          title: crs
+          type: string
+        spatial_bbox:
+          description: "[minX, minY, maxX, maxY] in WGS84"
+          items:
+            type: number
+          maxItems: 4
+          minItems: 4
+          title: spatial_bbox
+          type: array
+        temporal_coverage:
+          $ref: "#/components/schemas/TimeRange"
+        feature_count:
+          nullable: true
+          title: feature_count
+          type: integer
+        attributes:
+          items:
+            $ref: "#/components/schemas/ProcessedProfile_schema_inner"
+          title: attributes
+          type: array
+      title: DataLayer
+      type: object
+    ClusteringRequest:
+      example:
+        output_name: output_name
+        features:
+        - features
+        - features
+        method: kmeans
+        webhook_url: https://openapi-generator.tech
+        dataset_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        input_layers:
+        - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        params:
+          key: ""
+      properties:
+        dataset_id:
+          format: uuid
+          title: dataset_id
+          type: string
+        input_layers:
+          description: "IDs of layers/tables used for clustering (e.g., fused features)"
+          items:
+            format: uuid
+            type: string
+          title: input_layers
+          type: array
+        features:
+          description: Optional explicit list of feature columns to use
+          items:
+            type: string
+          title: features
+          type: array
+        method:
+          enum:
+          - kmeans
+          - dbscan
+          - hdbscan
+          - spectral
+          title: method
+          type: string
+        params:
+          additionalProperties: true
+          description: |
+            Method-specific params, e.g., kmeans: {n_clusters}, dbscan: {eps, min_samples}.
+          title: params
+          type: object
+        output_name:
+          title: output_name
+          type: string
+        webhook_url:
+          description: Optional callback to receive job completion notification
+          format: uri
+          title: webhook_url
+          type: string
+      required:
+      - dataset_id
+      - input_layers
+      - method
+      title: ClusteringRequest
+      type: object
+    PipelineRequest:
+      example:
+        webhook_url: https://openapi-generator.tech
+        dataset_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        pipeline_id: pipeline_id
+        output_tags:
+        - output_tags
+        - output_tags
+        steps:
+        - name: name
+          params:
+            key: ""
+        - name: name
+          params:
+            key: ""
+      properties:
+        dataset_id:
+          format: uuid
+          title: dataset_id
+          type: string
+        pipeline_id:
+          description: "Named/registered pipeline to execute (e.g., \"uhm_default_v1\"\
+            )"
+          title: pipeline_id
+          type: string
+        steps:
+          description: Override steps if not using a registered pipeline
+          items:
+            $ref: "#/components/schemas/PipelineRequest_steps_inner"
+          title: steps
+          type: array
+        output_tags:
+          items:
+            type: string
+          title: output_tags
+          type: array
+        webhook_url:
+          description: Optional callback to receive job completion notification
+          format: uri
+          title: webhook_url
+          type: string
+      required:
+      - dataset_id
+      title: PipelineRequest
+      type: object
+    Job:
+      example:
+        result:
+          artifacts:
+          - lineage:
+            - lineage
+            - lineage
+            size_bytes: 0
+            temporal_coverage:
+              start: 2000-01-23T04:56:07.000+00:00
+              end: 2000-01-23T04:56:07.000+00:00
+            source_files:
+            - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            name: name
+            created_at: 2000-01-23T04:56:07.000+00:00
+            spatial_bbox:
+            - 6.027456183070403
+            - 6.027456183070403
+            - 6.027456183070403
+            - 6.027456183070403
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            type: cleaned_table
+          - lineage:
+            - lineage
+            - lineage
+            size_bytes: 0
+            temporal_coverage:
+              start: 2000-01-23T04:56:07.000+00:00
+              end: 2000-01-23T04:56:07.000+00:00
+            source_files:
+            - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            name: name
+            created_at: 2000-01-23T04:56:07.000+00:00
+            spatial_bbox:
+            - 6.027456183070403
+            - 6.027456183070403
+            - 6.027456183070403
+            - 6.027456183070403
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            type: cleaned_table
+        request:
+          output_name: output_name
+          features:
+          - features
+          - features
+          method: kmeans
+          webhook_url: https://openapi-generator.tech
+          dataset_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          input_layers:
+          - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          params:
+            key: ""
+        finished_at: 2000-01-23T04:56:07.000+00:00
+        submitted_at: 2000-01-23T04:56:07.000+00:00
+        started_at: 2000-01-23T04:56:07.000+00:00
+        submitted_by: submitted_by
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        type: clustering
+        error:
+          code: code
+          details:
+            key: ""
+          message: message
+        status: queued
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        type:
+          enum:
+          - clustering
+          - pipeline
+          title: type
+          type: string
+        status:
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - canceled
+          title: status
+          type: string
+        submitted_at:
+          format: date-time
+          title: submitted_at
+          type: string
+        started_at:
+          format: date-time
+          nullable: true
+          title: started_at
+          type: string
+        finished_at:
+          format: date-time
+          nullable: true
+          title: finished_at
+          type: string
+        submitted_by:
+          title: submitted_by
+          type: string
+        request:
+          $ref: "#/components/schemas/Job_request"
+        result:
+          $ref: "#/components/schemas/Job_result"
+        error:
+          $ref: "#/components/schemas/Error"
+      title: Job
+      type: object
+    Error:
+      example:
+        code: code
+        details:
+          key: ""
+        message: message
+      properties:
+        code:
+          title: code
+          type: string
+        message:
+          title: message
+          type: string
+        details:
+          additionalProperties: true
+          title: details
+          type: object
+      title: Error
+      type: object
+    BBox:
+      description: "[minX, minY, maxX, maxY] in WGS84"
+      items:
+        type: number
+      maxItems: 4
+      minItems: 4
+      title: spatial_bbox
+      type: array
+    TimeRange:
+      example:
+        start: 2000-01-23T04:56:07.000+00:00
+        end: 2000-01-23T04:56:07.000+00:00
+      properties:
+        start:
+          format: date-time
+          title: start
+          type: string
+        end:
+          format: date-time
+          title: end
+          type: string
+      title: TimeRange
+      type: object
+    listDatasets_200_response:
+      example:
+        total: 0
+        page: 1
+        items:
+        - file_count: 0
+          metadata:
+            key: ""
+          size_bytes: 0
+          temporal_coverage:
+            start: 2000-01-23T04:56:07.000+00:00
+            end: 2000-01-23T04:56:07.000+00:00
+          name: name
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          spatial_bbox:
+          - 1.4658129805029452
+          - 1.4658129805029452
+          - 1.4658129805029452
+          - 1.4658129805029452
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          created_by: created_by
+          tags:
+          - tags
+          - tags
+        - file_count: 0
+          metadata:
+            key: ""
+          size_bytes: 0
+          temporal_coverage:
+            start: 2000-01-23T04:56:07.000+00:00
+            end: 2000-01-23T04:56:07.000+00:00
+          name: name
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          spatial_bbox:
+          - 1.4658129805029452
+          - 1.4658129805029452
+          - 1.4658129805029452
+          - 1.4658129805029452
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          created_by: created_by
+          tags:
+          - tags
+          - tags
+        page_size: 113
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/Dataset"
+          title: items
+          type: array
+        page:
+          minimum: 1
+          title: page
+          type: integer
+        page_size:
+          maximum: 200
+          minimum: 1
+          title: page_size
+          type: integer
+        total:
+          minimum: 0
+          title: total
+          type: integer
+      title: listDatasets_200_response
+      type: object
+    createDataset_request:
+      properties:
+        name:
+          minLength: 1
+          type: string
+        description:
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+        metadata_json:
+          description: Arbitrary metadata JSON as string (will be parsed)
+          type: string
+        files:
+          description: One or more files
+          items:
+            format: binary
+            type: string
+          type: array
+      required:
+      - files
+      - name
+      type: object
+    FileProfile_columns_inner:
+      example:
+        nullable: true
+        stats:
+          key: ""
+        name: name
+        dtype: dtype
+      properties:
+        name:
+          title: name
+          type: string
+        dtype:
+          title: dtype
+          type: string
+        nullable:
+          title: nullable
+          type: boolean
+        stats:
+          additionalProperties: true
+          title: stats
+          type: object
+      title: FileProfile_columns_inner
+      type: object
+    FileProfile_quality:
+      example:
+        duplicate_rows: 6
+        schema_issues:
+        - schema_issues
+        - schema_issues
+        missingness_pct: 0.8008281904610115
+      properties:
+        missingness_pct:
+          title: missingness_pct
+          type: number
+        duplicate_rows:
+          title: duplicate_rows
+          type: integer
+        schema_issues:
+          items:
+            type: string
+          title: schema_issues
+          type: array
+      title: FileProfile_quality
+      type: object
+    ProcessedProfile_schema_inner:
+      example:
+        name: name
+        dtype: dtype
+      properties:
+        name:
+          title: name
+          type: string
+        dtype:
+          title: dtype
+          type: string
+      title: ProcessedProfile_schema_inner
+      type: object
+    PipelineRequest_steps_inner:
+      example:
+        name: name
+        params:
+          key: ""
+      properties:
+        name:
+          title: name
+          type: string
+        params:
+          additionalProperties: true
+          title: params
+          type: object
+      title: PipelineRequest_steps_inner
+      type: object
+    Job_request:
+      anyOf:
+      - $ref: "#/components/schemas/ClusteringRequest"
+      - $ref: "#/components/schemas/PipelineRequest"
+      title: Job_request
+    Job_result:
+      description: "When succeeded, links to produced artifacts/layers"
+      example:
+        artifacts:
+        - lineage:
+          - lineage
+          - lineage
+          size_bytes: 0
+          temporal_coverage:
+            start: 2000-01-23T04:56:07.000+00:00
+            end: 2000-01-23T04:56:07.000+00:00
+          source_files:
+          - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          created_at: 2000-01-23T04:56:07.000+00:00
+          spatial_bbox:
+          - 6.027456183070403
+          - 6.027456183070403
+          - 6.027456183070403
+          - 6.027456183070403
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: cleaned_table
+        - lineage:
+          - lineage
+          - lineage
+          size_bytes: 0
+          temporal_coverage:
+            start: 2000-01-23T04:56:07.000+00:00
+            end: 2000-01-23T04:56:07.000+00:00
+          source_files:
+          - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          created_at: 2000-01-23T04:56:07.000+00:00
+          spatial_bbox:
+          - 6.027456183070403
+          - 6.027456183070403
+          - 6.027456183070403
+          - 6.027456183070403
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: cleaned_table
+      properties:
+        artifacts:
+          items:
+            $ref: "#/components/schemas/ProcessedArtifact"
+          title: artifacts
+          type: array
+      title: Job_result
+      type: object
+  #securitySchemes:
+  #  bearerAuth:
+  #    bearerFormat: JWT
+  #    scheme: bearer
+  #    type: http

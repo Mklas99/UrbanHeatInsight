@@ -1,6 +1,7 @@
+import sys
+
 from minio import Minio
 from minio.deleteobjects import DeleteObject
-import sys
 
 
 def delete_bucket(endpoint, access_key, secret_key, bucket_name, secure=False):
@@ -22,11 +23,11 @@ def delete_bucket(endpoint, access_key, secret_key, bucket_name, secure=False):
 
 
 def main():
-    endpoint = "localhost:9000"   # oder "localhost:9001"
+    endpoint = "localhost:9000"  # oder "localhost:9001"
     access_key = "minioadmin"
     secret_key = "minioadmin123"
-    bucket_name = "uhiprocessed"   # <--- Deinen Bucket-Namen hier eintragen
-    secure = False                # True, falls HTTPS aktiv ist
+    bucket_name = "uhiprocessed"  # <--- Deinen Bucket-Namen hier eintragen
+    secure = False  # True, falls HTTPS aktiv ist
 
     try:
         delete_bucket(endpoint, access_key, secret_key, bucket_name, secure)

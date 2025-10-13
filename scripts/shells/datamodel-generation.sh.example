@@ -1,0 +1,2 @@
+pip install datamodel-code-generator
+datamodel-codegen --input openapi.yaml --input-file-type openapi --output app/models.py
