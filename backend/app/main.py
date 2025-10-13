@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.logger_config import logger, LogMiddleware
 from app.database.database import engine
-from app.routers import heatmap, collector_router, minio_storage
+from app.routers import minio_storage
 from app.services.minio_client import ensure_bucket_exists
 from app.core.config import settings
 
@@ -41,8 +41,6 @@ app.add_middleware(
 )
 
 app.add_middleware(LogMiddleware)
-app.include_router(heatmap.router, prefix="/api", tags=["heatmap"])
-app.include_router(collector_router.router, prefix="/api", tags=["collector"])
 app.include_router(minio_storage.router, prefix="/api", tags=["minio"])
 
 @app.get("/", response_model=dict)
