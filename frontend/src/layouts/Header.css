@@ -1,0 +1,48 @@
+.header-link {
+    text-decoration: none;
+    font-family: monospace;
+    accent-color: var(--color-primary);
+    font-variant: h2;
+    color: var(--color-secondary)
+}
+
+.header-link:hover {
+    text-decoration: underline;
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 2px;
+}
+
+.header-link:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.language-select {
+    font-weight: 400;
+    font-size: 0.9rem;
+    line-height: 1.4375em;
+    color: #212121 !important;
+    font-family: "Roboto", sans-serif;
+    letter-spacing: 0.00938em;
+    box-sizing: border-box;
+    position: relative;
+    cursor: text;
+    display: -webkit-inline-box;
+    display: -webkit-inline-flex;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+    -webkit-align-items: center !important;
+    -webkit-box-align: center !important;
+    -ms-flex-align: center;
+    align-items: center !important;
+    position: relative;
+    border-radius: 8px !important;
+}
+
+.language-dropdown {
+    border: none !important;
+}
+
+.css-16neak2-MuiInputBase-root-MuiOutlinedInput-root-MuiSelect-root {
+    border: none !important;
+}

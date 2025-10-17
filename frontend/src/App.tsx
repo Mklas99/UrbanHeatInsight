@@ -1,15 +1,19 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Providers from './Providers';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar/Sidebar';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import logger from './utils/logger';
-import DataPage from './pages/DataPage';
+import DataPage from './pages/data/DataPage';
+import DataRawPage from './pages/data/DataRawPage';
+import DataModifiedPage from './pages/data/DataModifiedPage';
+import DataUploadPage from './pages/data/DataUploadPage';
+import RouteLayout from './layouts/RouteLayout';
+import MapViewSidebar from './layouts/Sidebar/MapViewSidebar';
+import DataSidebar from './layouts/Sidebar/DataSidebar';
+import AboutSidebar from './layouts/Sidebar/AboutSidebar';
 
 const log = logger('App.jsx');
-log.info('App module loaded');
 
 export default function App() {
   React.useEffect(() => {
@@ -17,16 +21,71 @@ export default function App() {
     return () => log.info('App unmounted');
   }, []);
 
-  log.debug('render App');
   return (
     <BrowserRouter>
       <Providers>
-        <Header />
-        <Sidebar />
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/data" element={<DataPage />} />
-          <Route path="/about" element={<AboutPage />} />
+          {/* Home route uses the map sidebar */}
+          <Route
+            path="/"
+            element={
+              <RouteLayout sidebar={<MapViewSidebar />}>
+                <HomePage />
+              </RouteLayout>
+            }
+          />
+          {/* Data routes share the data sidebar */}
+          <Route
+            path="/data"
+            element={
+              <RouteLayout sidebar={<DataSidebar />}>
+                <DataPage />
+              </RouteLayout>
+            }
+          />
+          <Route
+            path="/data/upload"
+            element={
+              <RouteLayout sidebar={<DataSidebar />}>
+                <DataUploadPage />
+              </RouteLayout>
+            }
+          />
+          <Route
+            path="/data/raw"
+            element={
+              <RouteLayout sidebar={<DataSidebar />}>
+                <DataRawPage />
+              </RouteLayout>
+            }
+          />
+          <Route
+            path="/data/processed"
+            element={
+              <RouteLayout sidebar={<DataSidebar />}>
+                <DataModifiedPage />
+              </RouteLayout>
+            }
+          />
+          {/* Alias for an export page, reusing the processed data view for now */}
+          <Route
+            path="/data/export"
+            element={
+              <RouteLayout sidebar={<DataSidebar />}>
+                <DataModifiedPage />
+              </RouteLayout>
+            }
+          />
+          {/* About route uses the about sidebar */}
+          <Route
+            path="/about"
+            element={
+              <RouteLayout sidebar={<AboutSidebar />}>
+                <AboutPage />
+              </RouteLayout>
+            }
+          />
+          {/* Catch-all redirects unknown routes to home */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Providers>

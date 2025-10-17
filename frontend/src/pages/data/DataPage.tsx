@@ -3,23 +3,22 @@ import {
   Typography,
   Box,
   Collapse,
-  Alert
+  Alert,
 } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useTranslation } from 'react-i18next';
-import logger from '../utils/logger';
-import DatasetDetailsCard from '../components/Data/DatasetDetailsCard';
-import UploadSection from '../components/Data/UploadSection';
-import DataTabs from '../components/Data/DataTabs';
-import { formatFileSize, calculateHeatIndex, generateMockData } from '../utils/dataUtils';
+import logger from '../../utils/logger';
+import DatasetDetailsCard from '../../components/Data/DatasetDetailsCard';
+import UploadSection from '../../components/Data/UploadSection';
+import DataTabs from '../../components/Data/DataTabs';
+import { formatFileSize, calculateHeatIndex, generateMockData } from '../../utils/dataUtils';
 
-import { SUPPORTED_FILE_FORMATS } from '../constants/fileFormats';
+import { SUPPORTED_FILE_FORMATS } from '../../constants/fileFormats';
 import type { UploadedData } from '@/models/UploadData';
 
 const log = logger('pages/DataPage.tsx');
 
 export default function DataPage() {
-  log.info('DataPage module loaded');
 
   const { t } = useTranslation<'data-page'>('data-page');
 
@@ -148,49 +147,53 @@ export default function DataPage() {
   }, []);
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }} className="data-page">
-      <Typography variant="h4" gutterBottom>
-        {t('title')}
-      </Typography>
-      <UploadSection
-        isUploading={isUploading}
-        uploadProgress={uploadProgress}
-        handleFileUpload={handleFileUpload}
-        supportedFormats={SUPPORTED_FILE_FORMATS}
-        t={t} // Pass translation function to UploadSection
-      />
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{t(error)}</Alert>}
-      <Collapse in={showDetails && uploadedData !== null}>
-        <DatasetDetailsCard
-          uploadedData={uploadedData}
-          processingData={processingData}
-          processingComplete={processingComplete}
-          handleProcessData={handleProcessData}
+    <Box className="data-page">
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+        <Typography variant="h4" gutterBottom>
+          {t('title')}
+        </Typography>
+        <UploadSection
+          isUploading={isUploading}
+          uploadProgress={uploadProgress}
+          handleFileUpload={handleFileUpload}
+          supportedFormats={SUPPORTED_FILE_FORMATS}
+          t={t} // Pass translation function to UploadSection
         />
-        <DataTabs
-          tabValue={tabValue}
-          setTabValue={setTabValue}
-          uploadedData={uploadedData}
-          processingComplete={processingComplete}
-        />
-      </Collapse>
-      
-      {/* Empty State */}
-      {!uploadedData && !isUploading && (
-        <Box sx={{ 
-          p: 4, 
-          textAlign: 'center', 
-          border: '2px dashed #ccc',
-          borderRadius: 2,
-          bgcolor: 'background.paper'
-        }}>
-          <UploadFileIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6">{t('emptyState.title')}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('emptyState.description')}
-          </Typography>
-        </Box>
-      )}
+        {error && <Alert severity="error" sx={{ mb: 3 }}>{t(error)}</Alert>}
+        <Collapse in={showDetails && uploadedData !== null}>
+          <DatasetDetailsCard
+            uploadedData={uploadedData}
+            processingData={processingData}
+            processingComplete={processingComplete}
+            handleProcessData={handleProcessData}
+          />
+          <DataTabs
+            tabValue={tabValue}
+            setTabValue={setTabValue}
+            uploadedData={uploadedData}
+            processingComplete={processingComplete}
+          />
+        </Collapse>
+        {!uploadedData && !isUploading && (
+          <Box
+            sx={{
+              p: 4,
+              textAlign: 'center',
+              border: '2px dashed',
+              borderColor: 'divider',
+              borderRadius: 2,
+              bgcolor: 'background.paper',
+              mt: 2,
+            }}
+          >
+            <UploadFileIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6">{t('emptyState.title')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('emptyState.description')}
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

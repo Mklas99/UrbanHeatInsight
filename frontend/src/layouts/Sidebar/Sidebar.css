@@ -1,0 +1,15 @@
+.sidebar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh; 
+  background-color: var(--paper-background);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); 
+  overflow-y: auto; 
+  z-index: 1000;
+}
+
+.main-content {
+  margin-left: 250px;
+  padding: 16px; 
+}

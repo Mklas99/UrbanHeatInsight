@@ -5,7 +5,6 @@ import en from './locales/en/common.json';
 import de from './locales/de/common.json';
 
 const log = logger('i18n/index.js');
-log.info('i18n module loaded');
 
 void i18n
   .use(initReactI18next)

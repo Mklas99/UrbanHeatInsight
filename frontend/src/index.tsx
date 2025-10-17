@@ -1,12 +1,10 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.js';
-import logger from './utils/logger.js';
+import App from './App';
+import logger from './utils/logger';
 import 'leaflet/dist/leaflet.css';
 
-const log = logger('index.jsx');
-log.info('entry module loaded');
-console.log('index.jsx loaded');
+const log = logger('index.tsx');
 
 const container = document.getElementById('root');
 if (!container) {

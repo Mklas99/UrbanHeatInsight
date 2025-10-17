@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import logger from '../utils/logger';
 
 const log = logger('state/uiStore.js');
-log.info('uiStore module loaded');
 
 interface UIStoreState {
   sidebarOpen: boolean;
