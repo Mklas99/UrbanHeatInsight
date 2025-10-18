@@ -1,15 +1,17 @@
-# UrbanHeatmap Starter Repository
+# UrbanHeatInsight Prototype
 
 ## Overview
 
-This is a full-stack starter for the UrbanHeatmap project, combining:
+This is a full-stack prototype `UrbanHeatmap project`. It combines:
 
-- React + Leaflet.js frontend
-- FastAPI backend serving API and static frontend files
-- MLflow tracking server with example logging
-- VS Code DevContainer for consistent development environment
+- `React + Leaflet.js frontend` that displays maps and the analysis. It also allows the user to view and edit the used data.
+- `FastAPI backend` serving API and data management as well as data processing
+- `MinIO` used as S3 compatable storage for the raw and processed data.
+- `MLflow` tracking server with example logging
+- DevContainer for consistent development environment
 - Docker Compose for orchestration of backend, MLflow, and frontend (optional)
 
+_Note: For mor Details refere to the services own Readme.md [Frontend](frontend/README.md), [Backend](backend/README.md)_
 ---
 
 ## Getting Started
@@ -17,41 +19,35 @@ This is a full-stack starter for the UrbanHeatmap project, combining:
 ### Prerequisites
 
 - Docker & Docker Compose installed
-- VS Code with Remote - Containers extension (optional but recommended)
 - Node.js and npm (if not using DevContainer)
 - Python 3.11+ (if not using DevContainer)
 
 ### Development with DevContainer (Recommended)
+. Start dev container
+. Starting Services:
+   . In VS Code the [launch.json configuration](./.vscode/launch.json) file provides easy `one-click start` for each service.
+   . Run the backend FastAPI server:
+      ```bash
+      uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+      ```
+   . Run the frontend React app:
+      ```bash
+      cd frontend
+      npm run dev
+      ```
+      Or use the NPM SCRIPTS in [package.json](./frontend/package.json)
 
-1. Open this project folder in VS Code.
-2. When prompted, reopen in the DevContainer.
-3. The container will build, installing dependencies for frontend and backend.
-4. Open a terminal inside VS Code.
-5. Run the backend FastAPI server:
-   ```bash
-   uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-6. Run the frontend React app:
-   ```bash
-   npm start --prefix frontend
-   ```
-7. Access:
+. Access:
    - Frontend at [http://localhost:3000](http://localhost:3000)
-   - Backend API at [http://localhost:8000/api/heatmap](http://localhost:8000/api/heatmap)
+   - Backend API at [http://localhost:8000/swagger](http://localhost:8000/swagger)
    - MLflow UI at [http://localhost:5000](http://localhost:5000) (if started with Docker Compose)
+   - PgAdmin at [http://localhost:5050](http://localhost:5050) (if started with Docker Compose)
 
 ### Using Docker Compose
 
-1. Run:
    ```bash
    docker-compose up --build
    ```
-2. This starts backend and MLflow server.
-3. Access:
-   - Backend API: [http://localhost:8000/api/heatmap](http://localhost:8000/api/heatmap)
-   - MLflow UI: [http://localhost:5000](http://localhost:5000)
-
-_Note: Frontend dev server is not included by default in Compose; run it manually or build static files and serve via backend._
 
 ### Logging Dummy Data to MLflow
 
@@ -62,21 +58,33 @@ python ml/log_dummy.py
 ```
 
 ### Project Structure
-
+- `.devcontainer`: Configuration for the development container
 - `frontend/`: React + Leaflet frontend
 - `backend/`: FastAPI backend app
 - `ml/`: Example MLflow experiment scripts
-- `.devcontainer/`: VS Code DevContainer configs
+- `scripts`: trial scripts that may helpfull in the development process
 - `docker-compose.yml`: Compose config for backend and MLflow
-- `README.md`, `.gitignore`: Project docs and ignore config
+- `README.md`, `.env`, `.gitignore`: Project docs and ignore config
 
 ---
 
-## Notes
+## Development Process
 
-- The backend serves static frontend files from `frontend/build` (run `npm run build` to create).
-- Logging is configured for JSON structured logs.
-- MLflow tracking server uses SQLite backend by default for simplicity.
+### Feature Branches
+
+Direct commits to the masters are not permited and disabled.
+Each branch must have a prefix depending on the implementation:
+- `feature/`  ->     for new feature implementations
+- `fix/`      ->     for fixes of defects
+- 
+
+### Commits
+
+In this project every commit should follow the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/#summary) convention.
+
+### Pull Requests
+
+
 
 ---
 
