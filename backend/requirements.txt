@@ -9,4 +9,3 @@ pydantic
 python-multipart
 pydantic-settings
 minio
-osgeo

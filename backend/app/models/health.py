@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import pprint
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, StrictStr, field_validator
 
@@ -28,9 +28,9 @@ class Health(BaseModel):
     Health
     """  # noqa: E501
 
-    status: Optional[StrictStr] = None
-    dependencies: Optional[Dict[str, StrictStr]] = None
-    __properties: ClassVar[List[str]] = ["status", "dependencies"]
+    status: StrictStr | None = None
+    dependencies: dict[str, StrictStr] | None = None
+    __properties: ClassVar[list[str]] = ["status", "dependencies"]
 
     @field_validator("status")
     def status_validate_enum(cls, value):
@@ -62,7 +62,7 @@ class Health(BaseModel):
         """Create an instance of Health from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Return the dictionary representation of the model using alias.
 
         This has the following differences from calling pydantic's
@@ -80,7 +80,7 @@ class Health(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: dict) -> Self:
         """Create an instance of Health from a dict"""
         if obj is None:
             return None

@@ -12,12 +12,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 # uvicorn requires the app to be importable, so we adjust sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.clients.minio_client import MinioClient
 from app.core.config import settings
 from app.core.logger_config import LogMiddleware, logger, setup_logging
 from app.database.database import engine
-from app.routers import minio_storage
+from app.routers.minio_storage_api import router as MinioStorageApi
 from app.routers.system_api import router as SystemApiRouter
-from app.services.minio_client import ensure_bucket_exists
 
 
 @asynccontextmanager
@@ -29,8 +29,8 @@ async def lifespan(app: FastAPI):
     try:
         """Initialize database tables on startup."""
         setup_logging(settings)
-        ensure_bucket_exists(settings.MINIO_BUCKET_RAW)
-        ensure_bucket_exists(settings.MINIO_BUCKET_PROCESSED)
+        MinioClient.get_instance().ensure_bucket_exists(settings.MINIO_BUCKET_RAW)
+        MinioClient.get_instance().ensure_bucket_exists(settings.MINIO_BUCKET_PROCESSED)
         logger.info("Starting UrbanHeatmap API...")
         yield
     except Exception as exc:
@@ -60,13 +60,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(LogMiddleware)
-app.include_router(minio_storage.router, prefix="/api", tags=["minio"])
-app.include_router(SystemApiRouter)
+
+app.include_router(MinioStorageApi, prefix="/api/storage", tags=["minio"])
+app.include_router(SystemApiRouter, prefix="/system", tags=["system"])
 
 
 ########## Exception Handlers ##########
-
-
 def error_response(error_type: str, message: str, details: object = None) -> JSONResponse:
     """Format error responses."""
     logger.error(f"Error occurred: {error_type}, {message}, {details}")

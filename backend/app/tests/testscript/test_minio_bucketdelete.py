@@ -26,7 +26,7 @@ def main():
     endpoint = "localhost:9000"  # oder "localhost:9001"
     access_key = "minioadmin"
     secret_key = "minioadmin123"
-    bucket_name = "uhiprocessed"  # <--- Deinen Bucket-Namen hier eintragen
+    bucket_name = "uhi-processed"  # <--- Deinen Bucket-Namen hier eintragen
     secure = False  # True, falls HTTPS aktiv ist
 
     try:

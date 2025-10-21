@@ -28,6 +28,13 @@
       "cwd": "${workspaceFolder}/frontend"
     },
     {
+      "name": "Start MinIO Docker",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "docker-compose up minio",
+      "cwd": "${workspaceFolder}"
+    },
+    {
       "name": "Run MLflow UI",
       "type": "debugpy",
       "request": "launch",

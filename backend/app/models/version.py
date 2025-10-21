@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import pprint
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, StrictStr
 
@@ -29,11 +29,11 @@ class Version(BaseModel):
     Version
     """  # noqa: E501
 
-    api_version: Optional[StrictStr] = None
-    build_sha: Optional[StrictStr] = None
-    model_version: Optional[StrictStr] = None
-    time: Optional[datetime] = None
-    __properties: ClassVar[List[str]] = ["api_version", "build_sha", "model_version", "time"]
+    api_version: StrictStr | None = None
+    build_sha: StrictStr | None = None
+    model_version: StrictStr | None = None
+    time: datetime | None = None
+    __properties: ClassVar[list[str]] = ["api_version", "build_sha", "model_version", "time"]
 
     model_config = {
         "populate_by_name": True,
@@ -55,7 +55,7 @@ class Version(BaseModel):
         """Create an instance of Version from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Return the dictionary representation of the model using alias.
 
         This has the following differences from calling pydantic's
@@ -78,7 +78,7 @@ class Version(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: Dict) -> Self:
+    def from_dict(cls, obj: dict) -> Self:
         """Create an instance of Version from a dict"""
         if obj is None:
             return None

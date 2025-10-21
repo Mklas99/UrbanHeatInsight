@@ -15,7 +15,6 @@ router = APIRouter()
     responses={
         200: {"model": Health, "description": "OK"},
     },
-    tags=["System"],
     summary="Liveness / readiness probe",
     response_model_by_alias=True,
 )
@@ -31,7 +30,6 @@ async def get_health() -> Health:
     responses={
         200: {"model": Version, "description": "Version info"},
     },
-    tags=["System"],
     summary="API and build/version info",
     response_model_by_alias=True,
 )

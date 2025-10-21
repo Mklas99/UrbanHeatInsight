@@ -1,7 +1,7 @@
 import os
 
 from pydantic import PositiveInt
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -32,23 +32,17 @@ class Settings(BaseSettings):
     DATABASE_URL: str | None = None
     app_env: str = os.getenv("APP_ENV", "development")  # development, staging, production
 
+    class Config:
+        env_file = "../../.env"
+        env_file_encoding = "utf-8"
+        case_sensitive = True
+        extra = "ignore"
+
     @property
     def db_url(self) -> str:
         if self.DATABASE_URL:
             return self.DATABASE_URL
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-        case_sensitive=True,
-    )
-
-    class Config:
-        env_file = "../../.env"
-        case_sensitive = True
-        extra = "ignore"
 
     @property
     def minio_endpoint_effective(self) -> str:
