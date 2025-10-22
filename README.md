@@ -87,5 +87,3 @@ In this project every commit should follow the [conventional commit](https://www
 
 
 ---
-
-Happy coding!

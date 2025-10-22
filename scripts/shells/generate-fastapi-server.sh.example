@@ -1,0 +1,3 @@
+
+npm i -D @openapitools/openapi-generator-cli
+npx openapi-generator-cli generate   -i contracts/firstcontract.yaml   -g python-fastapi   -o ./server   --additional-properties=packageName=app,projectName=my_app

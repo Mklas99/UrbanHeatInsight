@@ -1,42 +1,57 @@
-import logging
 import os
+
+from pydantic import PositiveInt
 from pydantic_settings import BaseSettings
-from typing import Optional
+
 
 class Settings(BaseSettings):
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "user")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "password")
-    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5432")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "urbanheatmap")
-    DATABASE_URL: Optional[str] = os.getenv("DATABASE_URL")
+    BACKEND_PORT: PositiveInt = 8000
+    LOG_LEVEL: str = "info"
+
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_DB: str = "uhidb"
+    POSTGRES_PORT: PositiveInt = 5432
+    POSTGRES_HOST: str = "localhost"
+
+    PGADMIN_PORT: PositiveInt = 5050
+    PGADMIN_DEFAULT_EMAIL: str = "admin@example.com"
+    PGADMIN_DEFAULT_PASSWORD: str = "admin123"
+
+    MLFLOW_PORT: PositiveInt = 5000
+
+    MINIO_ROOT_USER: str = "minioadmin"
+    MINIO_ROOT_PASSWORD: str = "minioadmin123"
+    MINIO_BUCKET_RAW: str = "uhi-raw"
+    MINIO_BUCKET_PROCESSED: str = "uhi-processed"
+    MINIO_PORT: PositiveInt = 9000
+    MINIO_CONSOLE_PORT: PositiveInt = 9001
+    MINIO_ENDPOINT: str | None = None
+    ENV: str = "dev"  # "docker" oder "dev"
+
+    DATABASE_URL: str | None = None
+    app_env: str = os.getenv("APP_ENV", "development")  # development, staging, production
+
+    class Config:
+        env_file = "../../.env"
+        env_file_encoding = "utf-8"
+        case_sensitive = True
+        extra = "ignore"
 
     @property
-    def db_url(self):
+    def db_url(self) -> str:
         if self.DATABASE_URL:
-            logging.info("Using DATABASE_URL from environment variable.")
             return self.DATABASE_URL
-        return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-        )
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    # API
-    API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "UrbanHeatmap API"
-        
-    # File uploads
-    MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB
-    UPLOAD_DIR: str = "/tmp/uploads"
-    
-    # Logging
-    LOG_LEVEL: str = "INFO"
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        extra = "ignore"  # <-- Add this line to ignore extra env vars
+    @property
+    def minio_endpoint_effective(self) -> str:
+        # ENV überschreibt Default-Host
+        if self.MINIO_ENDPOINT and self.MINIO_ENDPOINT.strip():
+            return self.MINIO_ENDPOINT.strip()
+        if self.ENV.lower() == "docker":
+            return f"http://minio:{self.MINIO_PORT}"
+        return f"http://127.0.0.1:{self.MINIO_PORT}"
+
 
 settings = Settings()
-# Ensure DATABASE_URL is always set for downstream code
-os.environ["DATABASE_URL"] = settings.db_url

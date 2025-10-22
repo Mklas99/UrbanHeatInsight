@@ -1,0 +1,8 @@
+ruff check                  # Lint files in the current directory.
+ruff check --fix            # Lint files in the current directory and fix any fixable errors.
+ruff check --watch          # Lint files in the current directory and re-lint on change.
+ruff check path/to/code/    # Lint files in `path/to/code`.
+
+ruff format                   # Format all files in the current directory.
+ruff format path/to/code/     # Format all files in `path/to/code` (and any subdirectories).
+ruff format path/to/file.py   # Format a single file.

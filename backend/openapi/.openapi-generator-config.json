@@ -1,0 +1,17 @@
+{
+  "generatorName": "python-fastapi",
+  "inputSpec": "/workspace/backend/openapi/openapi.yaml",
+  "outputDir": ".",
+  "globalProperties": {
+    "models": "",
+    "apis": "",
+    "skipFormModel": "false"
+  },
+  "additionalProperties": {
+    "packageName": "app",
+    "fastapiImplementationPackage": "repositories",
+    "sourceFolder": ".",
+    "serverPort": "8000",
+    "apiPackage": "app.routers"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "urban-heat-insight-fastapi",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "generate-openapi": "npx @openapitools/openapi-generator-cli generate -c /workspace/backend/openapi/.openapi-generator-config.json",
+    "lint": "ruff check --fix",
+    "format": "ruff format"
+  }
+}

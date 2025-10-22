@@ -34,6 +34,8 @@ ENV C_INCLUDE_PATH=/usr/include/gdal
 
 # Upgrade pip and setuptools
 RUN pip install --upgrade pip setuptools
+# Install FastAPI and Uvicorn
+RUN pip install --no-cache-dir fastapi "uvicorn[standard]"
 
 # Set the working directory
 WORKDIR /workspace

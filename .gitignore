@@ -1,6 +1,3 @@
-
-scripts/firstTest.geojson
-
 # Python
 __pycache__/
 *.py[cod]
@@ -11,9 +8,10 @@ venv/
 env/
 build/
 dist/
+*.ruff_cache/
 
 # Node
-frontend/node_modules/
+*/node_modules/
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
@@ -25,10 +23,14 @@ yarn-error.log*
 # VSCode
 #.vscode/
 .history/
+.idea/
 
 # Docker
 mlflow_data/
 mlruns/
 
+# custom
 doc/
 downloaded_data/
+scripts/firstTest.geojson
+logs/
