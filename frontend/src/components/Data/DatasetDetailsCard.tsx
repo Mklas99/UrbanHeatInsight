@@ -16,7 +16,7 @@ export default function DatasetDetailsCard({ uploadedData, processingData, proce
         </Box>
         <Divider sx={{ my: 2 }} />
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-          {/* ...existing code for dataset details... */}
+          temporary placeholder for dataset details
         </Box>
       </CardContent>
       <CardActions sx={{ justifyContent: 'flex-end', p: 2 }}>

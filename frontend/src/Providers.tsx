@@ -19,6 +19,12 @@ export default function Providers({ children }: React.PropsWithChildren<{}>) {
       i18n.changeLanguage(language).catch((err) => log.error('i18n.changeLanguage error', err));
     }
   }, [language]);
+  log.info("Providers component initialized");
+
+  React.useEffect(() => {
+    log.debug("Providers useEffect triggered", { themeMode, language });
+  }, [themeMode, language]);
+
   log.debug('render Providers', { themeMode, language });
   return (
     <I18nextProvider i18n={i18n}>

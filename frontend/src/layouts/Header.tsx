@@ -8,6 +8,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import LanguageIcon from '@mui/icons-material/Language';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../state/uiStore';
+import { Link } from 'react-router-dom';
 
 const log = logger('components/Header.jsx');
 
@@ -27,6 +28,7 @@ export default function Header(props: HeaderProps){
     return () => log.info('Header unmounted');
   }, []);
 
+  // Use Link from react-router-dom for SPA navigation
   return (
     <AppBar position="fixed" color="primary" enableColorOnDark>
       <Toolbar>
@@ -40,13 +42,13 @@ export default function Header(props: HeaderProps){
         {/* Page links */}
         <Box sx={{ mr: 3, flexGrow: 1, display: 'flex', justifyContent: 'right', gap: 3 }}>
           <Typography variant="h2">
-            <a href="/" className='header-link'>{t('header.home')}</a>
+            <Link to="/" className='header-link'>{t('header.home')}</Link>
           </Typography>
           <Typography variant="h2">
-            <a href="/data" className='header-link'>{t('header.data')}</a>
+            <Link to="/data" className='header-link'>{t('header.data')}</Link>
           </Typography>
           <Typography variant="h2">
-            <a href="/about" className='header-link'>{t('header.about')}</a>
+            <Link to="/about" className='header-link'>{t('header.about')}</Link>
           </Typography>
         </Box>
         {/* Settings */}
@@ -55,8 +57,17 @@ export default function Header(props: HeaderProps){
               { display: 'flex', alignItems: 'center', 
                 border: '4px solid var(--color-primary)',
                 borderRadius: '4px', padding: '2px 8px' }}>
-              <LanguageIcon aria-hidden style={{ color: 'var(--color-primary)', marginRight: '4px' }}/>
-              <Select className='language-dropdown' size="small" value={language} onChange={(e) => setLanguage(e.target.value)} aria-label={t('header.language')} disableUnderline>
+              <LanguageIcon aria-hidden style={{ color: 'var(--color-primary)', marginRight: '4px' }}>
+                {themeMode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
+              </LanguageIcon>
+              <Select
+                className='language-dropdown'
+                size="small"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                aria-label={t('header.language')}
+                inputProps={{ disableUnderline: true }}
+              >
                 <MenuItem value="en">EN</MenuItem>
                 <MenuItem value="de">DE</MenuItem>
               </Select>

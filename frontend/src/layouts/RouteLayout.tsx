@@ -5,7 +5,7 @@ import { useUIStore } from '../state/uiStore';
 
 /**
  * RouteLayout – a high level layout that renders the application header,
- * a persistent sidebar and the main content area. The sidebar content is
+ * a sidebar and the main content area. The sidebar content is
  * supplied via the `sidebar` prop allowing each route to provide its own
  * navigation or contextual controls. By centralising the layout concerns
  * here we adhere to the single responsibility principle – pages only

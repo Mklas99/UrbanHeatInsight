@@ -1,18 +1,18 @@
 import React from 'react';
 import logger from '../utils/logger';
-import MapView from '../components/MapView';
+import MapView from '../components/Maps/MapView';
 import './HomePage.css';
 import { Box } from '@mui/material';
 
 const log = logger('pages/HomePage.jsx');
 
 export default function HomePage(props: any) {
-  log.debug('HomePage render', { props });
-  
   React.useEffect(() => {
-    log.info('HomePage mounted');
-    return () => log.info('HomePage unmounted');
+    log.info("HomePage component mounted");
+    return () => log.info("HomePage component unmounted");
   }, []);
+
+  log.debug("HomePage render", { props });
 
   return (
     <Box className="home-page">

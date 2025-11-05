@@ -6,18 +6,19 @@ import 'leaflet/dist/leaflet.css';
 
 const log = logger('index.tsx');
 
+log.info("Application initialization started");
+
 const container = document.getElementById('root');
 if (!container) {
-    log.error('Root container not found');
+  log.error("Root container not found");
 } else {
-    const root = createRoot(container);
-    log.info('mounting React App');
-    root.render(
-        React.createElement(
-            React.StrictMode,
-            null,
-            React.createElement(App, null)
-        )
-    );
-    log.info('React App mounted');
+  const root = createRoot(container);
+  root.render(
+    React.createElement(
+      React.StrictMode,
+      null,
+      React.createElement(App, null)
+    )
+  );
+  log.info("React app rendered successfully");
 }
