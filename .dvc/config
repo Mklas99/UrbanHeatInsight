@@ -1,0 +1,8 @@
+[core]
+    remote = minio
+['remote "minio"']
+    url = s3://uhi-dvc
+    endpointurl = http://127.0.0.1:9000
+    use_ssl = false
+    access_key_id = minioadmin
+    secret_access_key = minioadmin123

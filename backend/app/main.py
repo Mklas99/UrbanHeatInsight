@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
         setup_logging(settings)
         MinioClient.get_instance().ensure_bucket_exists(settings.MINIO_BUCKET_RAW)
         MinioClient.get_instance().ensure_bucket_exists(settings.MINIO_BUCKET_PROCESSED)
+        MinioClient.get_instance().ensure_bucket_exists(settings.MINIO_BUCKET_DVC)
         logger.info("Starting UrbanHeatmap API...")
         yield
     except Exception as exc:

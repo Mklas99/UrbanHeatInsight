@@ -1,0 +1,6 @@
+outs:
+- md5: b81daaf5747f89ae398ac332381aacc8
+  size: 249529
+  isexec: true
+  hash: md5
+  path: miniotest.jpg

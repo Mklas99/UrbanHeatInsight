@@ -9,3 +9,4 @@ pydantic
 python-multipart
 pydantic-settings
 minio
+dvc-s3

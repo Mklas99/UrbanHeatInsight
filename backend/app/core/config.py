@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     MINIO_ROOT_PASSWORD: str = "minioadmin123"
     MINIO_BUCKET_RAW: str = "uhi-raw"
     MINIO_BUCKET_PROCESSED: str = "uhi-processed"
+    MINIO_BUCKET_DVC: str = "uhi-dvc"
     MINIO_PORT: PositiveInt = 9000
     MINIO_CONSOLE_PORT: PositiveInt = 9001
     MINIO_ENDPOINT: str | None = None
