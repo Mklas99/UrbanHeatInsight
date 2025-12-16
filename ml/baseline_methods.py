@@ -1,261 +1,283 @@
-import json
+import re
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple, Union, List
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
+
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LinearRegression, RidgeCV
+from sklearn.linear_model import RidgeCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import LeaveOneGroupOut, cross_val_predict
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 
 
-# -------------------------------------------------------------------
-# GeoJSON utilities
-# -------------------------------------------------------------------
-
-def load_geojson(path: str) -> dict:
-    """Load a GeoJSON file from disk."""
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def geojson_to_dataframe(gj: dict) -> pd.DataFrame:
-    """
-    Convert GeoJSON features to a flat pandas DataFrame:
-    - flattens 'properties'
-    - extracts longitude/latitude from geometry
-    - if geometry is not Point, it uses an approximate centroid
-    """
-    features = gj.get("features", [])
-    if not features:
-        raise ValueError("GeoJSON has no 'features'.")
-
-    # Flatten 'properties'
-    props_df = pd.json_normalize([feat.get("properties", {}) for feat in features])
-
-    # Extract lon/lat
-    def geom_to_lonlat(geom):
-        if geom is None:
-            return (np.nan, np.nan)
-        gtype = geom.get("type")
-        coords = geom.get("coordinates")
-
-        # Simple Point
-        if gtype == "Point" and isinstance(coords, (list, tuple)) and len(coords) >= 2:
-            return coords[0], coords[1]
-
-        # Fallback: compute a rough centroid for polygons/lines/etc.
-        def flatten(coord_list):
-            if isinstance(coord_list[0], (float, int)):
-                return [coord_list]
-            out = []
-            for x in coord_list:
-                out.extend(flatten(x))
-            return out
-
-        try:
-            flat = flatten(coords)
-            arr = np.array(flat)
-            return float(np.nanmean(arr[:, 0])), float(np.nanmean(arr[:, 1]))
-        except Exception:
-            return (np.nan, np.nan)
-
-    lon_lat = [geom_to_lonlat(feat.get("geometry")) for feat in features]
-    lon = [xy[0] for xy in lon_lat]
-    lat = [xy[1] for xy in lon_lat]
-
-    df = props_df.copy()
-    df["longitude"] = lon
-    df["latitude"] = lat
-    return df
-
-
-# -------------------------------------------------------------------
-# Preprocessing & model
-# -------------------------------------------------------------------
-
-def build_preprocessor(X: pd.DataFrame) -> Tuple[ColumnTransformer, List[str], List[str]]:
-    """
-    Build a ColumnTransformer that:
-    - imputes and scales numeric features,
-    - imputes and one-hot encodes categorical features.
-    """
-    numeric_features = X.select_dtypes(include=["number", "bool"]).columns.tolist()
-    categorical_features = [c for c in X.columns if c not in numeric_features]
-
-    numeric_transformer = Pipeline(
-        steps=[
-            ("imputer", SimpleImputer(strategy="median")),
-            ("scaler", StandardScaler()),
-        ]
-    )
-
-    categorical_transformer = Pipeline(
-        steps=[
-            ("imputer", SimpleImputer(strategy="most_frequent")),
-            ("onehot", OneHotEncoder(handle_unknown="ignore")),
-        ]
-    )
-
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", numeric_transformer, numeric_features),
-            ("cat", categorical_transformer, categorical_features),
-        ]
-    )
-
-    return preprocessor, numeric_features, categorical_features
-
+# -----------------------------
+# Metrics
+# -----------------------------
 
 def rmse(y_true, y_pred) -> float:
     return float(np.sqrt(mean_squared_error(y_true, y_pred)))
 
 
-def evaluate_split(name: str, y_true, y_pred) -> None:
-    """Print RMSE and MAE for one split."""
-    print(f"\n=== {name} ===")
+def print_metrics(y_true, y_pred, title: str) -> None:
+    print(f"\n=== {title} ===")
     print(f"RMSE: {rmse(y_true, y_pred):.4f}")
     print(f"MAE : {mean_absolute_error(y_true, y_pred):.4f}")
 
 
-# -------------------------------------------------------------------
-# Main training logic
-# -------------------------------------------------------------------
+# -----------------------------
+# Station id parsing
+# -----------------------------
 
-def run_baseline_regression(
-    df: pd.DataFrame,
-    target_column: str,
-    feature_columns: Optional[List[str]] = None,
-    model_type: str = "ridge",
-    test_size: float = 0.2,
-    val_size: float = 0.2,
-    random_state: int = 42,
-):
+def infer_station_id_from_filename(path: Union[str, Path]) -> int:
     """
-    Run a baseline regression with a train/val/test split.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input data with all columns (features + target).
-    target_column : str
-        Name of the column to predict.
-    feature_columns : list of str, optional
-        List of feature column names to use.
-        If None, all columns except the target are used.
-    model_type : str
-        "ridge" (default) or "linear".
-    test_size : float
-        Fraction of data used for test set.
-    val_size : float
-        Fraction of data used for validation set (relative to full dataset).
-    random_state : int
-        Random seed for reproducibility.
+    Expects filenames like: 105_105.csv, 4102_4102.csv
+    Returns the leading integer station id.
     """
+    name = Path(path).name
+    m = re.match(r"(\d+)", name)
+    if not m:
+        raise ValueError(f"Could not infer station_id from filename: {name}")
+    return int(m.group(1))
 
-    if target_column not in df.columns:
-        raise ValueError(f"Target column '{target_column}' not found in DataFrame columns.")
 
-    # Drop rows with missing target (you could also handle this differently)
-    df = df[df[target_column].notna()].copy()
-    if df.empty:
-        raise ValueError("No rows with non-missing target values.")
+# -----------------------------
+# Data loading
+# -----------------------------
 
-    # Select features
-    if feature_columns is None:
-        feature_columns = [c for c in df.columns if c != target_column]
-        print("Using all columns as features except the target:")
-        print(feature_columns)
+def load_station_metadata(metadata_path: str) -> pd.DataFrame:
+    """
+    Loads station metadata (CSV or Excel). Must contain 'station_id' and location columns.
+    """
+    p = Path(metadata_path)
+    if not p.exists():
+        raise FileNotFoundError(metadata_path)
+
+    if p.suffix.lower() == ".csv":
+        meta = pd.read_csv(p)
+    elif p.suffix.lower() in [".xlsx", ".xls"]:
+        meta = pd.read_excel(p)
     else:
-        # Check that requested features exist
-        missing = [c for c in feature_columns if c not in df.columns]
-        if missing:
-            raise ValueError(f"The following feature columns are missing in the DataFrame: {missing}")
-        print("Using specified feature columns:")
-        print(feature_columns)
+        raise ValueError("metadata_path must be a .csv or .xlsx/.xls file")
+
+    if "station_id" not in meta.columns:
+        raise ValueError("Station metadata must contain a 'station_id' column.")
+
+    meta["station_id"] = pd.to_numeric(meta["station_id"], errors="coerce").astype("Int64")
+    meta = meta.dropna(subset=["station_id"]).copy()
+    meta["station_id"] = meta["station_id"].astype(int)
+    return meta
+
+
+def load_hourly_station_csvs(
+    folder: str,
+    metadata_path: Optional[str] = None,
+    file_glob: str = "*.csv",
+    timestamp_column: str = "time",
+) -> pd.DataFrame:
+    """
+    Loads all hourly station CSVs and concatenates them.
+    - Skips metadata file if it is in the same folder
+    - Skips non-station CSVs (filenames not starting with digits)
+    - Adds station_id inferred from filename
+    """
+    folder_path = Path(folder)
+    if not folder_path.exists():
+        raise FileNotFoundError(folder)
+
+    meta_resolved = Path(metadata_path).resolve() if metadata_path else None
+    files = sorted(folder_path.glob(file_glob))
+    if not files:
+        raise ValueError(f"No CSV files found in {folder} matching {file_glob}")
+
+    frames = []
+    for f in files:
+        if meta_resolved is not None and f.resolve() == meta_resolved:
+            print(f"Skipping metadata file: {f.name}")
+            continue
+
+        if not re.match(r"^\d+", f.name):
+            print(f"Skipping non-hourly file (no leading station id): {f.name}")
+            continue
+
+        df = pd.read_csv(f)
+        df["station_id"] = infer_station_id_from_filename(f)
+
+        if timestamp_column in df.columns:
+            df[timestamp_column] = pd.to_datetime(df[timestamp_column], errors="coerce", utc=True)
+
+        frames.append(df)
+
+    if not frames:
+        raise ValueError("No hourly station CSVs were loaded (all files were skipped).")
+
+    return pd.concat(frames, ignore_index=True)
+
+
+def add_time_features(
+    df: pd.DataFrame,
+    timestamp_column: str = "time",
+    local_tz: Optional[str] = "Europe/Vienna",
+) -> pd.DataFrame:
+    """
+    Adds time features: hour, dayofyear, month, weekday.
+    Converts from UTC to local_tz if provided.
+    """
+    if timestamp_column not in df.columns:
+        raise ValueError(f"Timestamp column '{timestamp_column}' not found.")
+
+    if not is_datetime64_any_dtype(df[timestamp_column]):
+        df[timestamp_column] = pd.to_datetime(df[timestamp_column], errors="coerce", utc=True)
+
+    ts = df[timestamp_column]
+    if getattr(ts.dt, "tz", None) is not None:
+        if local_tz:
+            ts = ts.dt.tz_convert(local_tz)
+        ts = ts.dt.tz_localize(None)
+
+    df["hour"] = ts.dt.hour
+    df["dayofyear"] = ts.dt.dayofyear
+    df["month"] = ts.dt.month
+    df["weekday"] = ts.dt.weekday
+    return df
+
+
+# -----------------------------
+# Model
+# -----------------------------
+
+def build_location_time_baseline_pipeline(numeric_features: List[str]) -> Pipeline:
+    """
+    Numeric-only pipeline: impute median + scale + RidgeCV.
+    """
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", Pipeline(steps=[
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler()),
+            ]), numeric_features),
+        ],
+        remainder="drop",
+    )
+
+    reg = RidgeCV(alphas=np.logspace(-3, 3, 13))
+
+    return Pipeline(steps=[
+        ("preprocessor", preprocessor),
+        ("model", reg),
+    ])
+
+
+def run_leave_one_station_out_cv(
+    data: pd.DataFrame,
+    target_column: str,
+    group_column: str,
+    feature_columns: List[str],
+) -> Tuple[Pipeline, pd.DataFrame]:
+    """
+    Leave-One-Station-Out evaluation using LeaveOneGroupOut (groups=station_id).
+    Returns fitted model on all data and a dataframe with LOSO predictions.
+    """
+    needed = set(feature_columns + [target_column, group_column])
+    missing = [c for c in needed if c not in data.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    df = data.dropna(subset=[target_column, group_column]).copy()
+    df[group_column] = pd.to_numeric(df[group_column], errors="coerce").astype("Int64")
+    df = df.dropna(subset=[group_column]).copy()
+    df[group_column] = df[group_column].astype(int)
 
     X = df[feature_columns].copy()
     y = df[target_column].values
+    groups = df[group_column].values
 
-    # --- train / test split ---
-    X_train_full, X_test, y_train_full, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state
-    )
+    model = build_location_time_baseline_pipeline(numeric_features=feature_columns)
 
-    # --- train / validation split ---
-    # val_size is fraction of total dataset; adjust relative to train_full
-    val_relative = val_size / (1.0 - test_size)
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_train_full, y_train_full, test_size=val_relative, random_state=random_state
-    )
+    logo = LeaveOneGroupOut()
+    y_pred = cross_val_predict(model, X, y, cv=logo, groups=groups)
 
-    print(f"\nData split:")
-    print(f"  Train size: {len(X_train)}")
-    print(f"  Val   size: {len(X_val)}")
-    print(f"  Test  size: {len(X_test)}")
+    print_metrics(y, y_pred, title="Location+Time Baseline (Leave-One-Station-Out)")
 
-    # Build preprocessing based on training data only
-    preprocessor, num_cols, cat_cols = build_preprocessor(X_train)
-    print("\nDetected numeric features:", num_cols)
-    print("Detected categorical features:", cat_cols)
+    # Fit final model on all available data
+    model.fit(X, y)
 
-    # Choose model
-    if model_type == "linear":
-        reg = LinearRegression()
-        print("\nUsing LinearRegression as baseline.")
-    elif model_type == "ridge":
-        # RidgeCV tries multiple alphas and selects the best
-        alphas = np.logspace(-3, 3, 13)
-        reg = RidgeCV(alphas=alphas)
-        print("\nUsing RidgeCV as baseline. Alphas:", alphas)
-    else:
-        raise ValueError("model_type must be 'linear' or 'ridge'.")
+    out = df.copy()
+    out[f"{target_column}_loso_pred"] = y_pred
+    out[f"{target_column}_error"] = out[f"{target_column}_loso_pred"] - out[target_column]
+    return model, out
 
-    # Full pipeline
-    model = Pipeline(steps=[("preprocessor", preprocessor), ("model", reg)])
 
-    # Train on training split
-    model.fit(X_train, y_train)
-
-    # Predictions
-    y_train_pred = model.predict(X_train)
-    y_val_pred = model.predict(X_val)
-    y_test_pred = model.predict(X_test)
-
-    # Evaluation
-    evaluate_split("Train", y_train, y_train_pred)
-    evaluate_split("Validation", y_val, y_val_pred)
-    evaluate_split("Test", y_test, y_test_pred)
-
-    return model
+# -----------------------------
+# Main
+# -----------------------------
 
 if __name__ == "__main__":
-    GEOJSON_PATH = "data/example.geojson"
-    TARGET_COLUMN = "temperature"  # e.g., the meteorological variable you want to predict
+    # Paths (adapt if needed)
+    METADATA_PATH = "../data/weather_stations/stations_vienna.csv"
+    HOURLY_FOLDER = "../data/weather_stations"
 
-    # You can specify feature columns explicitly, for example:
-    # FEATURE_COLUMNS = ["longitude", "latitude", "elevation", "land_use"]
-    # If None, all columns except TARGET_COLUMN will be used.
-    FEATURE_COLUMNS = None
+    # Target to predict (your hourly data has 'tl' for air temperature)
+    TARGET_COLUMN = "tl"
 
-    # Load and prepare data
-    gj = load_geojson(GEOJSON_PATH)
-    df = geojson_to_dataframe(gj)
+    # Time column in hourly CSVs
+    TIMESTAMP_COLUMN = "time"
 
-    print("First few columns of the DataFrame:")
-    print(df.head())
+    # Columns from metadata for location
+    LON_COL = "Länge [°E]"
+    LAT_COL = "Breite [°N]"
+    ELEV_COL = "Höhe [m]"
 
-    # Run baseline
-    model = run_baseline_regression(
-        df=df,
-        target_column=TARGET_COLUMN,
-        feature_columns=FEATURE_COLUMNS,
-        model_type="ridge",
-        test_size=0.2,
-        val_size=0.2,
-        random_state=42,
+    # 1) Load station metadata
+    meta = load_station_metadata(METADATA_PATH)
+
+    # 2) Load hourly station CSVs
+    hourly = load_hourly_station_csvs(
+        HOURLY_FOLDER,
+        metadata_path=METADATA_PATH,
+        file_glob="*.csv",
+        timestamp_column=TIMESTAMP_COLUMN
     )
+
+    # 3) Merge hourly with metadata
+    data = hourly.merge(meta, on="station_id", how="left")
+
+    # 4) Add time features (Vienna local time) and drop raw timestamp
+    data = add_time_features(data, timestamp_column=TIMESTAMP_COLUMN, local_tz="Europe/Vienna")
+    data = data.drop(columns=[TIMESTAMP_COLUMN])
+
+    # 5) Define the ONLY features we use (available everywhere)
+    FEATURE_COLUMNS = [
+        LON_COL,
+        LAT_COL,
+        ELEV_COL,
+        "hour",
+        "dayofyear",
+        "month",
+        "weekday",
+    ]
+
+    print("\nFeature columns used (location + time only):")
+    print(FEATURE_COLUMNS)
+
+    # 6) Run LOSO baseline
+    model, df_with_preds = run_leave_one_station_out_cv(
+        data=data,
+        target_column=TARGET_COLUMN,
+        group_column="station_id",
+        feature_columns=FEATURE_COLUMNS,
+    )
+
+    # 7) Per-station bias summary (mean)
+    per_station = (
+        df_with_preds.groupby("station_id")[[TARGET_COLUMN, f"{TARGET_COLUMN}_loso_pred", f"{TARGET_COLUMN}_error"]]
+        .mean()
+        .sort_index()
+    )
+
+    print("\nPer-station mean results:")
+    print(per_station)
