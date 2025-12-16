@@ -7,6 +7,7 @@ import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
 
 from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import RidgeCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -164,8 +165,14 @@ def build_location_time_baseline_pipeline(numeric_features: List[str]) -> Pipeli
         remainder="drop",
     )
 
-    reg = RidgeCV(alphas=np.logspace(-3, 3, 13))
-
+    #reg = RidgeCV(alphas=np.logspace(-3, 3, 13))
+    reg = RandomForestRegressor(
+        n_estimators=300,
+        max_depth=None,
+        min_samples_leaf=5,
+        random_state=42,
+        n_jobs=-1,
+    )
     return Pipeline(steps=[
         ("preprocessor", preprocessor),
         ("model", reg),
