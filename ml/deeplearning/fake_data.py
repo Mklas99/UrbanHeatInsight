@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 
-BASE_DIR = "data"
+BASE_DIR = "../data_old"
 STATION_DIR = os.path.join(BASE_DIR, "stations")
 IMG_DIR = os.path.join(BASE_DIR, "images")
 

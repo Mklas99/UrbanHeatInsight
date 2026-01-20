@@ -8,22 +8,24 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 import os
-import glob
-import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+from tqdm import tqdm
 
 # ==========================================
 # 1. CONFIGURATION
 # ==========================================
-STATIONS_DIR = './data/stations'
-IMG_DIR = './data/images'
+# Pfad zur NEUEN Master-Datei (nicht mehr der Ordner!)
+DATA_FILE = "../data_new/weather_data_all.csv"
+IMG_DIR = "../data_new/images"
 
-# Hyperparameters
-BATCH_SIZE = 8
+BATCH_SIZE = 32
 LEARNING_RATE = 0.001
-EPOCHS = 5
+EPOCHS = 10
 
-# Device configuration (CUDA, MPS for Mac, or CPU)
+# WICHTIG: Setze dies auf 1.0 für echte Ergebnisse!
+# 0.005 war nur für den schnellen Test gedacht.
+SUB_SAMPLE_RATIO = 0.001
+
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
 elif torch.backends.mps.is_available():
@@ -35,44 +37,34 @@ print(f"Using device: {DEVICE}")
 
 
 # ==========================================
-# 2. DATA LOADING
+# 2. DATA LOADING (SINGLE FILE MODE)
 # ==========================================
-def load_data_from_folder(stations_dir):
-    """Loads all CSV files from the folder and merges them into one DataFrame."""
-    all_files = glob.glob(os.path.join(stations_dir, "*.csv"))
+def load_data(file_path):
+    print(f"📂 Lade Master-Dataset: {file_path}")
 
-    if len(all_files) == 0:
-        raise ValueError(f"No CSV files found in {stations_dir}!")
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"CRITICAL: {file_path} nicht gefunden! Bitte erst 'unify_data.py' ausführen.")
 
-    dfs = []
-    print(f"Reading {len(all_files)} CSV files from {stations_dir}...")
+    df = pd.read_csv(file_path)
 
-    for filename in all_files:
-        try:
-            df = pd.read_csv(filename)
+    # Check: Sind alle Spalten da? (Die von unify_data.py erstellt wurden)
+    req_cols = ['station_id', 'temperature', 'elevation', 'latitude', 'longitude',
+                'hour', 'month', 'dayofyear', 'weekday']
 
-            # Use filename as station_id (e.g., 'station_1.csv' -> 'station_1')
-            station_id = os.path.basename(filename).replace('.csv', '')
-            df['station_id'] = station_id
+    missing = [c for c in req_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"❌ Spalten fehlen in CSV: {missing}. Ist 'unify_data.py' korrekt durchgelaufen?")
 
-            # Check for required columns
-            required_cols = ['time', 'temperature', 'elevation']
-            if not all(col in df.columns for col in required_cols):
-                print(f"Warning: File {filename} is missing columns. Skipping.")
-                continue
+    # Speed-Up Sampling (falls gewünscht)
+    if SUB_SAMPLE_RATIO < 1.0:
+        print(f"✂️  Subsampling auf {SUB_SAMPLE_RATIO * 100}% der Daten...")
+        df = df.sample(frac=SUB_SAMPLE_RATIO, random_state=42).reset_index(drop=True)
 
-            dfs.append(df)
-        except Exception as e:
-            print(f"Error reading file {filename}: {e}")
-
-    if not dfs:
-        raise ValueError("No valid CSV files found!")
-
-    return pd.concat(dfs, ignore_index=True)
+    return df
 
 
 # ==========================================
-# 3. DATASET & MODEL
+# 3. DATASET (OPTIMIZED)
 # ==========================================
 class WeatherDataset(Dataset):
     def __init__(self, df, img_dir, transform=None):
@@ -85,173 +77,174 @@ class WeatherDataset(Dataset):
 
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
+        station_id = str(row['station_id'])  # Sicherstellen, dass ID ein String ist
 
-        # --- Load Image ---
-        img_name = f"{row['station_id']}.png"
+        # --- 1. BILD LADEN ---
+        # Sucht nach "station_105.png" oder "105.png"
+        img_name = f"station_{station_id}.png"
         img_path = os.path.join(self.img_dir, img_name)
 
-        # Fallback to .jpg if .png doesn't exist
         if not os.path.exists(img_path):
-            img_path = os.path.join(self.img_dir, f"{row['station_id']}.jpg")
+            img_path_v2 = os.path.join(self.img_dir, f"{station_id}.png")
+            if not os.path.exists(img_path_v2):
+                raise FileNotFoundError(f"CRITICAL: Bild fehlt für Station {station_id}!")
+            img_path = img_path_v2
 
-        try:
-            image = Image.open(img_path).convert('RGB')
-        except (FileNotFoundError, OSError):
-            # Return black image if file is missing/corrupt to prevent crash
-            image = Image.new('RGB', (224, 224), color='black')
-
+        image = Image.open(img_path).convert('RGB')
         if self.transform:
             image = self.transform(image)
 
-        # --- Process Metadata (Time & Elevation) ---
-        try:
-            ts = pd.to_datetime(row['time'])
-            hour_val = ts.hour
-        except:
-            hour_val = 12.0  # Default to noon if parsing fails
+        # --- 2. METADATA (7 Features) ---
+        # Wir lesen die Werte direkt aus der CSV, da unify_data.py sie schon berechnet hat.
 
-        # Normalize inputs: Elevation / 1000m, Hour / 24h
+        # Normalisierung (Wertebereich 0..1 für das neuronale Netz)
         meta = torch.tensor([
-            float(row['elevation']) / 1000.0,
-            float(hour_val) / 24.0
+            float(row['elevation']) / 3000.0,
+            float(row['latitude']) / 90.0,
+            float(row['longitude']) / 180.0,
+            float(row['hour']) / 24.0,
+            float(row['month']) / 12.0,
+            float(row['dayofyear']) / 366.0,
+            float(row['weekday']) / 6.0
         ], dtype=torch.float32)
 
         target = torch.tensor([float(row['temperature'])], dtype=torch.float32)
 
-        return image, meta, target
+        return image, meta, target, row['time']
 
 
+# ==========================================
+# 4. MODEL (512 Image + 7 Meta)
+# ==========================================
 class MultimodalModel(nn.Module):
     def __init__(self):
         super(MultimodalModel, self).__init__()
-        # Visual Backbone: ResNet18
+        # Bild-Zweig (ResNet18)
         self.cnn = models.resnet18(weights=ResNet18_Weights.DEFAULT)
-        self.cnn.fc = nn.Identity()  # Remove classification head
+        self.cnn.fc = nn.Identity()  # Output: 512 Features
 
-        # Regression Head: 512 (Image features) + 2 (Meta features)
+        # Fusion: 512 (Bild) + 7 (Meta) = 519 Features
         self.fc_head = nn.Sequential(
-            nn.Linear(512 + 2, 128),
+            nn.Linear(512 + 7, 128),
             nn.ReLU(),
             nn.Dropout(0.2),
-            nn.Linear(128, 1)  # Output: Temperature
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1)
         )
 
     def forward(self, img, meta):
-        features = self.cnn(img)
-        features = features.view(features.size(0), -1)  # Flatten
-
-        # Concatenate visual and metadata features
-        combined = torch.cat((features, meta), dim=1)
-
+        feat = self.cnn(img)
+        feat = feat.view(feat.size(0), -1)  # Flatten
+        combined = torch.cat((feat, meta), dim=1)
         return self.fc_head(combined)
 
 
 # ==========================================
-# 4. MAIN LOOP (Leave-One-Station-Out)
+# 5. TRAINING LOOP (LOO-CV)
 # ==========================================
 def main():
-    # Load Data
-    try:
-        full_df = load_data_from_folder(STATIONS_DIR)
-    except Exception as e:
-        print(e)
-        return
+    # 1. Daten laden (Single File)
+    full_df = load_data(DATA_FILE)
 
-    unique_stations = full_df['station_id'].unique()
-    print(f"Found {len(unique_stations)} unique stations: {unique_stations}")
+    stations = full_df['station_id'].unique()
+    print(f"✅ Daten bereit: {len(full_df)} Zeilen, {len(stations)} Stationen.")
 
-    # Standard ImageNet normalization
-    transform = transforms.Compose([
+    tf = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    global_true = []
-    global_pred = []
+    all_preds_df = []
 
-    # Leave-One-Out Cross-Validation Loop
-    for i, test_station in enumerate(unique_stations):
-        print(f"\n--- ROUND {i + 1}/{len(unique_stations)}: Testing on '{test_station}' ---")
+    # --- Leave-One-Station-Out Loop ---
+    for i, test_station in enumerate(stations):
+        print(f"\n{'=' * 40}")
+        print(f"ROUND {i + 1}/{len(stations)}: Hold-out Station '{test_station}'")
+        print(f"{'=' * 40}")
 
-        # Split data: Hold out one station for testing, train on the rest
-        test_df = full_df[full_df['station_id'] == test_station]
+        # Split based on station_id column
         train_df = full_df[full_df['station_id'] != test_station]
+        test_df = full_df[full_df['station_id'] == test_station]
 
-        train_loader = DataLoader(WeatherDataset(train_df, IMG_DIR, transform),
-                                  batch_size=BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(WeatherDataset(test_df, IMG_DIR, transform),
-                                 batch_size=1, shuffle=False)
+        if len(test_df) == 0:
+            print("⚠️ Skipping empty test station.")
+            continue
 
-        # Re-initialize model for every fold (crucial for valid CV)
+        # DataLoaders
+        train_ds = WeatherDataset(train_df, IMG_DIR, tf)
+        test_ds = WeatherDataset(test_df, IMG_DIR, tf)
+
+        train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+        test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+
+        # Model Init
         model = MultimodalModel().to(DEVICE)
-        optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-        criterion = nn.MSELoss()
+        opt = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        loss_fn = nn.MSELoss()
 
         # Training
         model.train()
         for epoch in range(EPOCHS):
-            batch_losses = []
-            for img, meta, target in train_loader:
-                img, meta, target = img.to(DEVICE), meta.to(DEVICE), target.to(DEVICE)
+            loop = tqdm(train_loader, desc=f"Ep {epoch + 1}/{EPOCHS}", leave=False)
+            epoch_losses = []
 
-                optimizer.zero_grad()
+            for img, meta, y, _ in loop:
+                img, meta, y = img.to(DEVICE), meta.to(DEVICE), y.to(DEVICE)
+
+                opt.zero_grad()
                 pred = model(img, meta)
-                loss = criterion(pred, target)
+                loss = loss_fn(pred, y)
                 loss.backward()
-                optimizer.step()
-                batch_losses.append(loss.item())
+                opt.step()
 
-            if (epoch + 1) % 5 == 0:
-                print(f"  Epoch {epoch + 1}, Loss: {np.mean(batch_losses):.4f}")
+                epoch_losses.append(loss.item())
+                loop.set_postfix(loss=np.mean(epoch_losses))
 
-        # Evaluation
+        # Evaluation (Validation on Hold-out Station)
         model.eval()
-        station_targets = []
-        station_preds = []
+        true_vals, pred_vals, timestamps = [], [], []
 
         with torch.no_grad():
-            for img, meta, target in test_loader:
-                img, meta, target = img.to(DEVICE), meta.to(DEVICE), target.to(DEVICE)
+            for img, meta, y, time_batch in test_loader:
+                img, meta, y = img.to(DEVICE), meta.to(DEVICE), y.to(DEVICE)
                 pred = model(img, meta)
 
-                station_targets.append(target.item())
-                station_preds.append(pred.item())
+                true_vals.extend(y.cpu().numpy().flatten())
+                pred_vals.extend(pred.cpu().numpy().flatten())
+                timestamps.extend(time_batch)
 
-        rmse_station = np.sqrt(mean_squared_error(station_targets, station_preds))
-        print(f"  -> RMSE for {test_station}: {rmse_station:.2f}°C")
+        rmse_val = np.sqrt(mean_squared_error(true_vals, pred_vals))
+        print(f"  -> Station {test_station} RMSE: {rmse_val:.4f}°C")
 
-        global_true.extend(station_targets)
-        global_pred.extend(station_preds)
+        # Ergebnisse speichern
+        df_res = pd.DataFrame({
+            'station_id': test_station,
+            'time': timestamps,
+            'true_temp': true_vals,
+            'pred_temp': pred_vals
+        })
+        all_preds_df.append(df_res)
 
-    # Global Metrics
-    total_rmse = np.sqrt(mean_squared_error(global_true, global_pred))
-    total_mae = mean_absolute_error(global_true, global_pred)
+    # --- FINAL GLOBAL EVALUATION ---
+    if not all_preds_df:
+        print("❌ Keine Vorhersagen generiert.")
+        return
+
+    final_df = pd.concat(all_preds_df, ignore_index=True)
+    final_df.to_csv("cnn_results_final.csv", index=False)
+
+    global_rmse = np.sqrt(mean_squared_error(final_df['true_temp'], final_df['pred_temp']))
+    global_mae = mean_absolute_error(final_df['true_temp'], final_df['pred_temp'])
 
     print("\n" + "=" * 40)
-    print(f"FINAL RESULTS (Leave-One-Out CV)")
+    print("FINAL CNN RESULTS (Unified Data)")
     print("=" * 40)
-    print(f"RMSE: {total_rmse:.4f} °C")
-    print(f"MAE:  {total_mae:.4f} °C")
+    print(f"Global RMSE: {global_rmse:.4f}")
+    print(f"Global MAE : {global_mae:.4f}")
+    print("Predictions saved to 'cnn_results_final.csv'")
     print("=" * 40)
-
-    # Plotting
-    plt.figure(figsize=(6, 6))
-    plt.scatter(global_true, global_pred, alpha=0.5, label='Predictions')
-
-    # Perfect prediction line
-    min_val = min(min(global_true), min(global_pred))
-    max_val = max(max(global_true), max(global_pred))
-    plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='Ideal')
-
-    plt.xlabel('Measured Temperature (°C)')
-    plt.ylabel('Predicted Temperature (°C)')
-    plt.title(f'Spatial Generalization (RMSE: {total_rmse:.2f}°C)')
-    plt.legend()
-    plt.grid(True)
-
-    plt.savefig('final_results.png')
-    print("Plot saved as: final_results.png")
 
 
 if __name__ == "__main__":
