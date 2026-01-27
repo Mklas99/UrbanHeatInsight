@@ -99,13 +99,13 @@ class WeatherDataset(Dataset):
 
         # Normalisierung (Wertebereich 0..1 für das neuronale Netz)
         meta = torch.tensor([
-            float(row['elevation']) / 3000.0,
-            float(row['latitude']) / 90.0,
-            float(row['longitude']) / 180.0,
-            float(row['hour']) / 24.0,
-            float(row['month']) / 12.0,
-            float(row['dayofyear']) / 366.0,
-            float(row['weekday']) / 6.0
+            float(row['elevation']),
+            float(row['latitude']),
+            float(row['longitude']),
+            float(row['hour']) ,
+            float(row['month']) ,
+            float(row['dayofyear']) ,
+            float(row['weekday'])
         ], dtype=torch.float32)
 
         target = torch.tensor([float(row['temperature'])], dtype=torch.float32)
@@ -119,24 +119,30 @@ class WeatherDataset(Dataset):
 class MultimodalModel(nn.Module):
     def __init__(self):
         super(MultimodalModel, self).__init__()
-        # Bild-Zweig (ResNet18)
-        self.cnn = models.resnet18(weights=ResNet18_Weights.DEFAULT)
-        self.cnn.fc = nn.Identity()  # Output: 512 Features
 
-        # Fusion: 512 (Bild) + 7 (Meta) = 519 Features
+        self.cnn = models.resnet18(weights=ResNet18_Weights.DEFAULT)
+        self.cnn.fc = nn.Identity()  # Output hier: 512 Features
+
+        self.cnn_bottleneck = nn.Sequential(
+            nn.Linear(512, 16),
+            nn.ReLU(),
+            nn.Dropout(0.1)
+        )
+
         self.fc_head = nn.Sequential(
-            nn.Linear(512 + 7, 128),
+            nn.Linear(16 + 7, 64),
             nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(64, 1)  # Output: Temperatur
         )
 
     def forward(self, img, meta):
         feat = self.cnn(img)
-        feat = feat.view(feat.size(0), -1)  # Flatten
+        feat = feat.view(feat.size(0), -1)
+
+        feat = self.cnn_bottleneck(feat)
+
         combined = torch.cat((feat, meta), dim=1)
+
         return self.fc_head(combined)
 
 

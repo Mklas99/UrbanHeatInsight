@@ -51,7 +51,7 @@ def build_location_time_baseline_pipeline(numeric_features: List[str]) -> Pipeli
 
     # Random Forest Configuration
     reg = RandomForestRegressor(
-        n_estimators=15,  # Empfehlung: 100 ist stabiler als 15
+        n_estimators=150,
         max_depth=None,
         min_samples_leaf=5,
         random_state=42,
