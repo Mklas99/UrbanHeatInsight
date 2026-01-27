@@ -1,0 +1,24 @@
+{
+  "station_id": "5963",
+  "lon": 16.355833,
+  "lat": 48.248611,
+  "crs_metric": "EPSG:32633",
+  "bbox_metric": [
+    600151.109022928,
+    5344321.437881117,
+    601151.109022928,
+    5345321.437881117
+  ],
+  "patch_pixels": 128,
+  "patch_meters": 1000.0,
+  "channels": [
+    "orthophoto_r",
+    "orthophoto_g",
+    "orthophoto_b",
+    "roads_graph",
+    "trees",
+    "public_green",
+    "Abwaerme",
+    "abwasser"
+  ]
+}
