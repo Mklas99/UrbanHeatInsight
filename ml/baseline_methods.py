@@ -83,7 +83,7 @@ def run_leave_one_station_out_cv(
     logo = LeaveOneGroupOut()
 
     print("Running Leave-One-Group-Out CV (Random Forest Baseline)")
-    # Für jede Station einmal trainieren (auf den anderen 9) und vorhersagen
+    # Für jede Station einmal trainieren und vorhersagen
     y_pred = cross_val_predict(model, X, y, cv=logo, groups=groups, n_jobs=-1)
 
     # Globale Metriken ausgeben
@@ -99,7 +99,7 @@ def run_leave_one_station_out_cv(
 
 # 4. MAIN
 if __name__ == "__main__":
-    print(f"Loading data from {DATA_FILE}...")
+    print(f"Loading data from {DATA_FILE}")
     try:
         data = pd.read_csv(DATA_FILE)
     except FileNotFoundError:
