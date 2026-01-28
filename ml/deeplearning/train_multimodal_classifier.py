@@ -11,10 +11,7 @@ import os
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from tqdm import tqdm
 
-# ==========================================
 # 1. CONFIGURATION
-# ==========================================
-# Pfad zur NEUEN Master-Datei (nicht mehr der Ordner!)
 DATA_FILE = "../data_new/weather_data_all.csv"
 IMG_DIR = "../data_new/images"
 
@@ -22,8 +19,7 @@ BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 EPOCHS = 10
 
-# WICHTIG: Setze dies auf 1.0 für echte Ergebnisse!
-# 0.005 war nur für den schnellen Test gedacht.
+# Optional: Subsample ratio for faster experimentation (1.0 = full data)
 SUB_SAMPLE_RATIO = 0.001
 
 if torch.cuda.is_available():
@@ -40,7 +36,7 @@ print(f"Using device: {DEVICE}")
 # 2. DATA LOADING (SINGLE FILE MODE)
 # ==========================================
 def load_data(file_path):
-    print(f"📂 Lade Master-Dataset: {file_path}")
+    print(f"Lade Master-Dataset: {file_path}")
 
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"CRITICAL: {file_path} nicht gefunden! Bitte erst 'unify_data.py' ausführen.")
@@ -53,19 +49,17 @@ def load_data(file_path):
 
     missing = [c for c in req_cols if c not in df.columns]
     if missing:
-        raise ValueError(f"❌ Spalten fehlen in CSV: {missing}. Ist 'unify_data.py' korrekt durchgelaufen?")
+        raise ValueError(f"Spalten fehlen in CSV: {missing}. Ist 'unify_data.py' korrekt durchgelaufen?")
 
     # Speed-Up Sampling (falls gewünscht)
     if SUB_SAMPLE_RATIO < 1.0:
-        print(f"✂️  Subsampling auf {SUB_SAMPLE_RATIO * 100}% der Daten...")
+        print(f"✂Subsampling auf {SUB_SAMPLE_RATIO * 100}% der Daten...")
         df = df.sample(frac=SUB_SAMPLE_RATIO, random_state=42).reset_index(drop=True)
 
     return df
 
 
-# ==========================================
 # 3. DATASET (OPTIMIZED)
-# ==========================================
 class WeatherDataset(Dataset):
     def __init__(self, df, img_dir, transform=None):
         self.df = df
@@ -79,7 +73,7 @@ class WeatherDataset(Dataset):
         row = self.df.iloc[idx]
         station_id = str(row['station_id'])  # Sicherstellen, dass ID ein String ist
 
-        # --- 1. BILD LADEN ---
+        # 1. BILD LADEN
         # Sucht nach "station_105.png" oder "105.png"
         img_name = f"station_{station_id}.png"
         img_path = os.path.join(self.img_dir, img_name)
@@ -94,7 +88,7 @@ class WeatherDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        # --- 2. METADATA (7 Features) ---
+        # 2. METADATA (7 Features)
         # Wir lesen die Werte direkt aus der CSV, da unify_data.py sie schon berechnet hat.
 
         # Normalisierung (Wertebereich 0..1 für das neuronale Netz)
@@ -113,9 +107,7 @@ class WeatherDataset(Dataset):
         return image, meta, target, row['time']
 
 
-# ==========================================
 # 4. MODEL (512 Image + 7 Meta)
-# ==========================================
 class MultimodalModel(nn.Module):
     def __init__(self):
         super(MultimodalModel, self).__init__()
@@ -154,7 +146,7 @@ def main():
     full_df = load_data(DATA_FILE)
 
     stations = full_df['station_id'].unique()
-    print(f"✅ Daten bereit: {len(full_df)} Zeilen, {len(stations)} Stationen.")
+    print(f"Daten bereit: {len(full_df)} Zeilen, {len(stations)} Stationen.")
 
     tf = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -164,7 +156,7 @@ def main():
 
     all_preds_df = []
 
-    # --- Leave-One-Station-Out Loop ---
+    # Leave-One-Station-Out Loop
     for i, test_station in enumerate(stations):
         print(f"\n{'=' * 40}")
         print(f"ROUND {i + 1}/{len(stations)}: Hold-out Station '{test_station}'")
@@ -175,7 +167,7 @@ def main():
         test_df = full_df[full_df['station_id'] == test_station]
 
         if len(test_df) == 0:
-            print("⚠️ Skipping empty test station.")
+            print("Skipping empty test station.")
             continue
 
         # DataLoaders
@@ -233,9 +225,9 @@ def main():
         })
         all_preds_df.append(df_res)
 
-    # --- FINAL GLOBAL EVALUATION ---
+    # FINAL GLOBAL EVALUATION
     if not all_preds_df:
-        print("❌ Keine Vorhersagen generiert.")
+        print("Keine Vorhersagen generiert.")
         return
 
     final_df = pd.concat(all_preds_df, ignore_index=True)

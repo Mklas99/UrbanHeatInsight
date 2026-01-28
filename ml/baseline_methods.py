@@ -9,19 +9,15 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from typing import List, Tuple
 
-# ==========================================
 # 1. CONFIGURATION
-# ==========================================
-# Path to the unified master dataset
+# Path to the master dataset
 DATA_FILE = "data_new/weather_data_all.csv"
 
 # Column Mapping (matches weather_data_all.csv)
 TARGET_COLUMN = "temperature"
 
 
-# ==========================================
 # 2. METRICS
-# ==========================================
 def rmse(y_true, y_pred) -> float:
     return float(np.sqrt(mean_squared_error(y_true, y_pred)))
 
@@ -32,9 +28,7 @@ def print_metrics(y_true, y_pred, title: str) -> None:
     print(f"Global MAE : {mean_absolute_error(y_true, y_pred):.4f}")
 
 
-# ==========================================
 # 3. MODEL PIPELINE
-# ==========================================
 def build_location_time_baseline_pipeline(numeric_features: List[str]) -> Pipeline:
     """
     Numeric-only pipeline: impute median + scale + RandomForest.
@@ -95,7 +89,7 @@ def run_leave_one_station_out_cv(
     # Globale Metriken ausgeben
     print_metrics(y, y_pred, title="GLOBAL RESULTS (Random Forest)")
 
-    # Return results
+    # results
     out = df.copy()
     out[f"{target_column}_pred"] = y_pred
     out[f"{target_column}_error"] = out[f"{target_column}_pred"] - out[target_column]
@@ -103,15 +97,13 @@ def run_leave_one_station_out_cv(
     return model, out
 
 
-# ==========================================
 # 4. MAIN
-# ==========================================
 if __name__ == "__main__":
-    print(f"📂 Loading data from {DATA_FILE}...")
+    print(f"Loading data from {DATA_FILE}...")
     try:
         data = pd.read_csv(DATA_FILE)
     except FileNotFoundError:
-        print("❌ Error: 'weather_data_all.csv' not found. Run 'unify_data.py' first!")
+        print("Error: 'weather_data_all.csv' not found. Run 'unify_data.py' first!")
         exit()
 
     # Define Features
@@ -136,7 +128,7 @@ if __name__ == "__main__":
         feature_columns=FEATURE_COLUMNS,
     )
 
-    # --- NEU: Detaillierte Ausgabe pro Station (wie beim CNN) ---
+    # Detaillierte Ausgabe pro Station (wie beim CNN)
     print("\n" + "=" * 40)
     print("DETAILED STATION RESULTS")
     print("=" * 40)
@@ -175,4 +167,4 @@ if __name__ == "__main__":
 
     # Save CSV
     df_with_preds.to_csv("baseline_rf_results.csv", index=False)
-    print("\n✅ Results saved to 'baseline_rf_results.csv'")
+    print("\n Results saved to 'baseline_rf_results.csv'")

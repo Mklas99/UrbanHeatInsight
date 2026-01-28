@@ -8,9 +8,7 @@ from PIL import Image
 from io import BytesIO
 from tqdm import tqdm
 
-# ==========================================
 # 1. CONFIGURATION
-# ==========================================
 # Pfad zur Master-Datei (Neue Struktur)
 DATA_FILE = "data_new/weather_data_all.csv"
 # Speicherort für Bilder
@@ -21,16 +19,14 @@ IMAGES_DIR = "data_new/images"
 # Empfehlung für CNNs: 16 oder 17 (zeigt Umgebung/Vegetation)
 ZOOM_LEVEL = 18
 
-print(f"📂 Lade Stationen aus: {os.path.abspath(DATA_FILE)}")
-print(f"📂 Speichere Bilder in: {os.path.abspath(IMAGES_DIR)}")
+print(f"Lade Stationen aus: {os.path.abspath(DATA_FILE)}")
+print(f"Speichere Bilder in: {os.path.abspath(IMAGES_DIR)}")
 
 # Ordner erstellen
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
-# ==========================================
 # 2. MATH (Lat/Lon -> Tile URL)
-# ==========================================
 def deg2num(lat_deg, lon_deg, zoom):
     """
     Konvertiert Latitude/Longitude in x/y Kachel-Koordinaten für OSM.
@@ -72,34 +68,32 @@ def download_tile(station_id, lat, lon):
                 img.save(save_path)
                 return True
             except Exception as img_err:
-                print(f"❌ Bildfehler bei Station {station_id}: {img_err}")
+                print(f"Bildfehler bei Station {station_id}: {img_err}")
                 return False
         else:
-            print(f"❌ HTTP {response.status_code} bei URL: {url}")
+            print(f"HTTP {response.status_code} bei URL: {url}")
             return False
 
     except Exception as e:
-        print(f"❌ Netzwerkfehler bei Station {station_id}: {e}")
+        print(f"Netzwerkfehler bei Station {station_id}: {e}")
         return False
 
 
-# ==========================================
 # 3. MAIN LOOP
-# ==========================================
 def main():
     if not os.path.exists(DATA_FILE):
-        print("❌ Master-Datei fehlt! Bitte erst 'unify_data.py' ausführen.")
+        print("Master-Datei fehlt! Bitte erst 'unify_data.py' ausführen.")
         return
 
     # 1. Daten laden
-    print("⏳ Lade CSV...")
+    print("Lade CSV...")
     df = pd.read_csv(DATA_FILE)
 
     # 2. Einzigartige Stationen extrahieren
     # Wir brauchen nur ID, Lat, Lon -> Duplikate entfernen
     stations_df = df[['station_id', 'latitude', 'longitude']].drop_duplicates(subset=['station_id'])
 
-    print(f"🔍 Gefunden: {len(stations_df)} einzigartige Stationen.")
+    print(f"Gefunden: {len(stations_df)} einzigartige Stationen.")
 
     success_count = 0
     skipped_count = 0
@@ -118,20 +112,20 @@ def main():
             continue
 
         if pd.isna(lat) or pd.isna(lon):
-            print(f"⚠️ Keine Koordinaten für Station {station_id}, überspringe.")
+            print(f"Keine Koordinaten für Station {station_id}, überspringe.")
             continue
 
         # Download
         if download_tile(station_id, lat, lon):
             success_count += 1
 
-        # WICHTIG: Kurze Pause für Fair Use Policy von OSM (max 1 Req/sec empfohlen)
+        # WICHTIG: Kurze Pause für Fair Use Policy von OSM (max 1 Req/sec)
         time.sleep(0.15)
 
-    print(f"\n🎉 FERTIG!")
-    print(f"✅ Neu geladen: {success_count}")
-    print(f"⏩ Übersprungen (schon da): {skipped_count}")
-    print(f"📂 Bilder liegen in: {os.path.abspath(IMAGES_DIR)}")
+    print(f"\nFERTIG!")
+    print(f"Neu geladen: {success_count}")
+    print(f"Übersprungen (schon da): {skipped_count}")
+    print(f"Bilder liegen in: {os.path.abspath(IMAGES_DIR)}")
 
 
 if __name__ == "__main__":
