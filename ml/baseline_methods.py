@@ -83,7 +83,7 @@ def run_leave_one_station_out_cv(
     logo = LeaveOneGroupOut()
 
     print("Running Leave-One-Group-Out CV (Random Forest Baseline)...")
-    # Hier wird für jede Station einmal trainiert (auf den anderen 9) und vorhergesagt
+    # Für jede Station einmal trainieren (auf den anderen 9) und vorhersagen
     y_pred = cross_val_predict(model, X, y, cv=logo, groups=groups, n_jobs=-1)
 
     # Globale Metriken ausgeben
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         feature_columns=FEATURE_COLUMNS,
     )
 
-    # Detaillierte Ausgabe pro Station (wie beim CNN)
+    # Detailed Station Results
     print("\n" + "=" * 40)
     print("DETAILED STATION RESULTS")
     print("=" * 40)
