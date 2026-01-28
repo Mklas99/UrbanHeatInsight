@@ -51,7 +51,7 @@ def load_data(file_path):
 
     # Speed-Up Sampling (falls gewünscht)
     if SUB_SAMPLE_RATIO < 1.0:
-        print(f"✂Subsampling auf {SUB_SAMPLE_RATIO * 100}% der Daten...")
+        print(f"✂Subsampling auf {SUB_SAMPLE_RATIO * 100}% der Daten")
         df = df.sample(frac=SUB_SAMPLE_RATIO, random_state=42).reset_index(drop=True)
 
     return df
@@ -78,7 +78,7 @@ class WeatherDataset(Dataset):
         if not os.path.exists(img_path):
             img_path_v2 = os.path.join(self.img_dir, f"{station_id}.png")
             if not os.path.exists(img_path_v2):
-                raise FileNotFoundError(f"CRITICAL: Bild fehlt für Station {station_id}!")
+                raise FileNotFoundError(f"Bild fehlt für Station {station_id}!")
             img_path = img_path_v2
 
         image = Image.open(img_path).convert('RGB')
@@ -151,9 +151,7 @@ def main():
 
     # Leave-One-Station-Out Loop
     for i, test_station in enumerate(stations):
-        print(f"\n{'=' * 40}")
         print(f"ROUND {i + 1}/{len(stations)}: Hold-out Station '{test_station}'")
-        print(f"{'=' * 40}")
 
         # Split based on station_id column
         train_df = full_df[full_df['station_id'] != test_station]
@@ -207,7 +205,7 @@ def main():
                 timestamps.extend(time_batch)
 
         rmse_val = np.sqrt(mean_squared_error(true_vals, pred_vals))
-        print(f"  -> Station {test_station} RMSE: {rmse_val:.4f}°C")
+        print(f"  Station {test_station} RMSE: {rmse_val:.4f}°C")
 
         # Ergebnisse speichern
         df_res = pd.DataFrame({
@@ -229,13 +227,10 @@ def main():
     global_rmse = np.sqrt(mean_squared_error(final_df['true_temp'], final_df['pred_temp']))
     global_mae = mean_absolute_error(final_df['true_temp'], final_df['pred_temp'])
 
-    print("\n" + "=" * 40)
     print("FINAL CNN RESULTS (Unified Data)")
-    print("=" * 40)
     print(f"Global RMSE: {global_rmse:.4f}")
     print(f"Global MAE : {global_mae:.4f}")
     print("Predictions saved to 'cnn_results_final.csv'")
-    print("=" * 40)
 
 
 if __name__ == "__main__":

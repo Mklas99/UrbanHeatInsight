@@ -97,18 +97,18 @@ def create_master_dataset():
         return
 
     # 3. ZUSAMMENFÜGEN & MERGEN
-    print("Füge alle Messdaten zusammen...")
+    print("Füge alle Messdaten zusammen")
     master_df = pd.concat(dfs, ignore_index=True)
 
     # Check auf Duplikate im Master
     master_df = master_df.loc[:, ~master_df.columns.duplicated()]
 
-    print("Verbinde Messdaten mit Koordinaten...")
+    print("Verbinde Messdaten mit Koordinaten")
     # 'inner' join: Behalte nur Daten, wo wir AUCH Koordinaten haben
     final_df = pd.merge(master_df, df_meta, on='station_id', how='inner')
 
     # 4. FEATURE ENGINEERING
-    print("Generiere Zeit-Features (hour, month, weekday...)...")
+    print("Generiere Zeit-Features (hour, month, weekday)")
 
     # Zeit parsen
     final_df['time'] = pd.to_datetime(final_df['time'], utc=True)
@@ -120,7 +120,7 @@ def create_master_dataset():
     final_df['weekday'] = final_df['time'].dt.weekday  # 0 = Montag
 
     # 5. FINALISIEREN & SPEICHERN
-    # Zur Sicherheit am Ende nochmal leere Zeilen löschen (wo Temp oder Koordinaten fehlen)
+    # leere Zeilen löschen (wo Temp oder Koordinaten fehlen)
     req_cols = ['temperature', 'latitude', 'longitude', 'elevation']
     final_df = final_df.dropna(subset=req_cols)
 

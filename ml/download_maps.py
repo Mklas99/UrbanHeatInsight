@@ -121,8 +121,6 @@ def main():
 
         # WICHTIG: Kurze Pause für Fair Use Policy von OSM (max 1 Req/sec)
         time.sleep(0.15)
-
-    print(f"\nFERTIG!")
     print(f"Neu geladen: {success_count}")
     print(f"Übersprungen (schon da): {skipped_count}")
     print(f"Bilder liegen in: {os.path.abspath(IMAGES_DIR)}")

@@ -129,9 +129,7 @@ if __name__ == "__main__":
     )
 
     # Detailed Station Results
-    print("\n" + "=" * 40)
     print("DETAILED STATION RESULTS")
-    print("=" * 40)
 
     unique_stations = sorted(df_with_preds['station_id'].unique())
     station_stats = []
@@ -153,17 +151,13 @@ if __name__ == "__main__":
         })
 
     # Summary Table
-    print("\n" + "=" * 40)
-    print("SUMMARY TABLE (Random Forest)")
-    print("=" * 40)
+    print("Summary table (Random Forest)")
     stats_df = pd.DataFrame(station_stats).set_index('station_id')
     print(stats_df)
 
     # Durchschnitt über alle Stationen
     avg_rmse = stats_df['RMSE'].mean()
-    print("-" * 40)
     print(f"Average RMSE across all stations: {avg_rmse:.4f}°C")
-    print("=" * 40)
 
     # Save CSV
     df_with_preds.to_csv("baseline_rf_results.csv", index=False)
