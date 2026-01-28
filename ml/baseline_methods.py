@@ -82,7 +82,7 @@ def run_leave_one_station_out_cv(
     model = build_location_time_baseline_pipeline(numeric_features=feature_columns)
     logo = LeaveOneGroupOut()
 
-    print("Running Leave-One-Group-Out CV (Random Forest Baseline)...")
+    print("Running Leave-One-Group-Out CV (Random Forest Baseline)")
     # Für jede Station einmal trainieren (auf den anderen 9) und vorhersagen
     y_pred = cross_val_predict(model, X, y, cv=logo, groups=groups, n_jobs=-1)
 
