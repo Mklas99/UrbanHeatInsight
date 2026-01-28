@@ -19,7 +19,7 @@ BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 EPOCHS = 10
 
-# Optional: Subsample ratio for faster experimentation (1.0 = full data)
+# Subsample ratio for faster experimentation (1.0 = full data)
 SUB_SAMPLE_RATIO = 0.001
 
 if torch.cuda.is_available():
@@ -32,9 +32,7 @@ else:
 print(f"Using device: {DEVICE}")
 
 
-# ==========================================
 # 2. DATA LOADING (SINGLE FILE MODE)
-# ==========================================
 def load_data(file_path):
     print(f"Lade Master-Dataset: {file_path}")
 
@@ -59,7 +57,7 @@ def load_data(file_path):
     return df
 
 
-# 3. DATASET (OPTIMIZED)
+# 3. DATASET
 class WeatherDataset(Dataset):
     def __init__(self, df, img_dir, transform=None):
         self.df = df
@@ -74,7 +72,6 @@ class WeatherDataset(Dataset):
         station_id = str(row['station_id'])  # Sicherstellen, dass ID ein String ist
 
         # 1. BILD LADEN
-        # Sucht nach "station_105.png" oder "105.png"
         img_name = f"station_{station_id}.png"
         img_path = os.path.join(self.img_dir, img_name)
 
@@ -89,8 +86,6 @@ class WeatherDataset(Dataset):
             image = self.transform(image)
 
         # 2. METADATA (7 Features)
-        # Wir lesen die Werte direkt aus der CSV, da unify_data.py sie schon berechnet hat.
-
         # Normalisierung (Wertebereich 0..1 für das neuronale Netz)
         meta = torch.tensor([
             float(row['elevation']),
@@ -138,9 +133,7 @@ class MultimodalModel(nn.Module):
         return self.fc_head(combined)
 
 
-# ==========================================
 # 5. TRAINING LOOP (LOO-CV)
-# ==========================================
 def main():
     # 1. Daten laden (Single File)
     full_df = load_data(DATA_FILE)
@@ -225,7 +218,7 @@ def main():
         })
         all_preds_df.append(df_res)
 
-    # FINAL GLOBAL EVALUATION
+    # FINAL EVALUATION
     if not all_preds_df:
         print("Keine Vorhersagen generiert.")
         return

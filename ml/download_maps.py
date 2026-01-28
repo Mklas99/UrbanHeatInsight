@@ -47,7 +47,7 @@ def download_tile(station_id, lat, lon):
     # URL Format für OpenStreetMap (Standard Server)
     url = f"https://tile.openstreetmap.org/{ZOOM_LEVEL}/{xtile}/{ytile}.png"
 
-    # WICHTIG: User-Agent setzen, sonst blockiert OSM das Skript (403 Forbidden)
+    # User-Agent setzen, sonst blockiert OSM das Skript (403 Forbidden)
     headers = {
         'User-Agent': 'ResearchProject_FH_AI/1.0 (contact: student@fh-salzburg.ac.at)'
     }

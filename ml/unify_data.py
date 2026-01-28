@@ -3,7 +3,6 @@ import glob
 import os
 from tqdm import tqdm
 
-# KONFIGURATION
 # Pfad Rohdaten
 INPUT_DIR = "data_new/weather_stations"
 # Metadaten-Datei
@@ -17,7 +16,7 @@ def create_master_dataset():
 
     # 1. METADATEN LADEN (Koordinaten)
     meta_path = os.path.join(INPUT_DIR, METADATA_FILE)
-    print(f"📖 Lade Metadaten von: {METADATA_FILE}")
+    print(f"Lade Metadaten von: {METADATA_FILE}")
 
     try:
         df_meta = pd.read_csv(meta_path)
@@ -46,7 +45,7 @@ def create_master_dataset():
 
     # 2. MESSDATEN LADEN (Temperatur & Zeit)
     all_files = glob.glob(os.path.join(INPUT_DIR, "*_*.csv"))
-    print(f"📂 Gefundene Mess-Dateien: {len(all_files)}")
+    print(f"Gefundene Mess-Dateien: {len(all_files)}")
 
     dfs = []
 
